@@ -7,6 +7,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: linear-gradient(135deg, #f6fdfe, #d4ecef, #7faeb4);
 }
 
 .dateSep {

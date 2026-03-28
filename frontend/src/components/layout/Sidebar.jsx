@@ -42,17 +42,10 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
       <div className={styles.bottom}>
         {role === 'seeker' ? (
           <>
-            <NavLink to="/help" className={styles.navItem}>
-              <span className={styles.navIcon}>?</span>
-              <span className={styles.navLabel}>Help</span>
-            </NavLink>
             <NavLink to="/logout" className={styles.navItem}>
               <span className={styles.navIcon}>↩</span>
               <span className={styles.navLabel}>Logout</span>
             </NavLink>
-            <button className={styles.emergencyBtn} onClick={() => navigate('/emergency')}>
-              Emergency Support
-            </button>
           </>
         ) : (
           <div className={styles.helperProfile}>
