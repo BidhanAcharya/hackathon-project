@@ -146,8 +146,3 @@ All design tokens are defined once in `src/index.css` as CSS custom properties a
 
 To change the brand colour, update `--color-primary` in `index.css` — the entire app updates.
 
----
-
-## Backend
-
-`/backend` is a placeholder. No server is implemented yet. All data is mocked on the frontend.
