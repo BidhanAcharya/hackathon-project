@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBvTbTgbTEUjdgTrmBb3Ila_6PLanlz9_c")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Configure the API
 genai.configure(api_key=GEMINI_API_KEY)
