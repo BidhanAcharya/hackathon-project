@@ -2,8 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
-from app.models.models import HelpSession, SessionStatus
-from app.services.analyze import analyze_conversation
+from app.models.models import HelpSession, SessionStatus, User
+from app.services.analyze import onboarding_assesment,analyze_conversation
 from app.schemas.schemas import HelpRequestSchema, AnalyzeRequest
 from app.services.matching import find_available_helper
 from pydantic import BaseModel
@@ -11,7 +11,16 @@ import uuid
 
 router = APIRouter(tags=["Help Request"], prefix="/api/v1")
 
-
+@router.post("/initial-assessment")
+def initial_assesment(data: AnalyzeRequest, db: Session = Depends(get_db)):
+    assessment_result = onboarding_assesment(data.conversation)
+    # This should now update in the users's intial assesment field in DB
+    user = db.query(User).filter(User.user_id == data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.initial_assesment = assessment_result
+    db.commit()
+    return assessment_result
 
 @router.post("/analyze")
 def analyze(data: AnalyzeRequest):

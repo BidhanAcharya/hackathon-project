@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime,Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from . import Base
@@ -45,6 +45,7 @@ class User(Base):
     username = Column(String(200), index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String, nullable=False)
+    initial_assesment = Column(JSON, nullable=True)  # Stores dict directly
     chat_sessions = relationship("ChatSession", back_populates="user")
     help_sessions = relationship("HelpSession", back_populates="user")
     assessments = relationship("UserAssessment", back_populates="user")

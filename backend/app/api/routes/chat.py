@@ -1,4 +1,3 @@
-import google.generativeai as genai
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -6,23 +5,10 @@ from app.api.deps import get_db,TokenDep,get_current_user
 from app.models import User, ChatHistory, ChatSession  # assuming your model file is models.py
 from app.schemas import QueryRequestSchema
 from app.utils import rewrite_query
+from app.core.llm import get_chat_response
 
-# Configure Gemini model
-genai.configure(api_key="AIzaSyCOIO38luqg-jil4gw18h-5VhqvpApeu7E")
-model = genai.GenerativeModel("gemini-2.0-flash")
 
-MENTAL_HEALTH_SYSTEM_PROMPT = """You are a compassionate and supportive mental health assistant. Your role is to:
-- Listen empathetically to users' concerns
-- Provide supportive, non-judgmental responses
-- Offer helpful coping strategies and resources when appropriate
-- Encourage professional help when needed
-- Never diagnose conditions or prescribe treatments
-- Maintain a warm, caring tone throughout the conversation
-
-Remember: You are not a replacement for professional mental health care. If someone is in crisis, encourage them to contact emergency services or a crisis helpline.
-"""
-
-def get_chatbot_response(query: str, chat_context: str = None) -> str:
+def get_chatbot_response(query: str, chat_context: str = None, user_assessment: dict = None) -> str:
     """
     Get response from Gemini model for mental health support.
     """
@@ -30,14 +16,12 @@ def get_chatbot_response(query: str, chat_context: str = None) -> str:
     if chat_context:
         context_section = f"\n\nPrevious conversation context:\n{chat_context}\n"
     
-    prompt = f"""{MENTAL_HEALTH_SYSTEM_PROMPT}
-{context_section}
+    prompt = f"""{context_section}
 User's message: {query}
 
 Please provide a supportive and helpful response:"""
     
-    response = model.generate_content(prompt)
-    return response.text
+    return get_chat_response(prompt, user_assessment=user_assessment)
 
 
 router = APIRouter(tags=["chatbot"],prefix ="/api/v1")
@@ -110,8 +94,12 @@ async def answer_query(session_id :str,
         rewritten_query = rewrite_query(query = request.query, chat_context = chat_context)
         print("\n Rewritten Query: ", rewritten_query)
 
-        # Get response from Gemini model
-        ai_response_text = get_chatbot_response(query=rewritten_query, chat_context=chat_context)
+        # Get response from Gemini model (pass user's assessment for personalized responses)
+        ai_response_text = get_chatbot_response(
+            query=rewritten_query, 
+            chat_context=chat_context,
+            user_assessment=current_user.initial_assesment
+        )
 
         print("\nAI Response:", ai_response_text)
 

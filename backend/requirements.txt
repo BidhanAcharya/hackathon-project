@@ -15,7 +15,7 @@ ipython
 langchain
 langgraph
 langchain-google-genai
-google-generativeai
+google-genai
 beautifulsoup4
 langchain-tavily
-bcrypt=4.0.1 
+bcrypt==4.0.1 

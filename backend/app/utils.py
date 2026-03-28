@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.core.config import settings
-from Chatbot.llm_config import llm
-from langchain_core.prompts import ChatPromptTemplate
+from app.core.llm import get_basic_response
 
     
 def rewrite_query(query: str, chat_context: str) -> str:
@@ -23,16 +22,17 @@ def rewrite_query(query: str, chat_context: str) -> str:
         if chat_context is None:
             return query
         else:
-            query_template = ChatPromptTemplate.from_messages([
-                ("system",
-                "You are a query rewriting specialist for a Mental Health Support Chatbot."
-                " From the input of previous chat history and the human input, generate a clear, empathetic query that captures the user's emotional state and concerns. Keep it concise - no more than two sentences."),
-                ("system", "STRICTLY RESPOND WITH THE FINAL QUERY ONLY, NO ADDITIONAL TEXT AND PREAMBLE."),
-                ("system", f"Previous Chat History (for context, if relevant):\n{chat_context}"),
-                ("human", "{input}")
-            ])
+            prompt = f"""You are a query rewriting specialist for a Mental Health Support Chatbot.
+From the input of previous chat history and the human input, generate a clear, empathetic query that captures the user's emotional state and concerns. Keep it concise - no more than two sentences.
+
+STRICTLY RESPOND WITH THE FINAL QUERY ONLY, NO ADDITIONAL TEXT AND PREAMBLE.
+
+Previous Chat History (for context, if relevant):
+{chat_context}
+
+User Input: {query}
+
+Rewritten Query:"""
             
-            query = query_template.format(input= query)
-            response = llm.invoke(query)
-            new_query = response.content
-            return new_query
+            new_query = get_basic_response(prompt)
+            return new_query.strip()
