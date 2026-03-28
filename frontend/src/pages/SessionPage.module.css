@@ -1,0 +1,78 @@
+.sessionPage { display: flex; flex-direction: column; height: 100vh; }
+
+.topBar {
+  height: 52px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 20px;
+}
+
+.sessionInfo { display: flex; flex-direction: column; }
+.sessionName { font-size: 14px; font-weight: 700; color: var(--color-text-primary); }
+.sessionRole { font-size: 11px; color: var(--color-text-muted); }
+
+.focusTags { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.focusTag { background: var(--color-primary-light); color: var(--color-primary); font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-pill); }
+
+.topBarRight { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.donateBtn { background: var(--color-alert-red-light); color: var(--color-alert-red); border-radius: var(--radius-pill); padding: 5px 14px; font-size: 12px; font-weight: 600; }
+.timer { font-size: 13px; font-weight: 600; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+.chatWrapper { display: flex; flex: 1; overflow: hidden; }
+
+.chatArea { flex: 1; overflow-y: auto; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+
+.dateSep { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--color-text-muted); align-self: center; background: var(--color-background); padding: 3px 12px; border-radius: var(--radius-pill); }
+
+.msgRow { display: flex; align-items: flex-end; gap: 10px; }
+.helperRow { flex-direction: row; }
+.userRow { flex-direction: row-reverse; }
+
+.helperAvatar { width: 32px; height: 32px; border-radius: 50%; background: var(--color-helper-purple-light); flex-shrink: 0; }
+.userAvatar { width: 28px; height: 28px; border-radius: 50%; background: var(--color-primary-light); flex-shrink: 0; }
+
+.bubble { max-width: 400px; padding: 13px 15px; border-radius: var(--radius-lg); font-size: 14px; line-height: 1.6; }
+.bubble p { margin: 0; }
+.helperBubble { background: var(--color-surface); box-shadow: var(--shadow-card); color: var(--color-text-primary); }
+.userBubble { background: var(--color-primary); color: white; }
+.time { display: block; font-size: 10px; margin-top: 5px; opacity: 0.6; }
+
+.typing { display: flex; gap: 4px; padding: 4px 2px; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--color-text-muted); animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+.goalsPanel {
+  width: 260px;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.goalsPanelHeader { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--color-text-primary); }
+.goalsPanelHeader button { font-size: 18px; color: var(--color-text-muted); }
+
+.goalsList { display: flex; flex-direction: column; gap: 12px; }
+.goalItem { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
+.goalItem input { accent-color: var(--color-primary); margin-top: 2px; }
+.goalDone { text-decoration: line-through; color: var(--color-text-muted); }
+
+.energySection { display: flex; flex-direction: column; gap: 8px; }
+.energyLabel { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--color-text-muted); text-transform: uppercase; }
+.energySlider { width: 100%; accent-color: var(--color-primary); }
+
+.inputBar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: var(--color-surface); border-top: 1px solid var(--color-border); }
+.attachBtn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--color-border); font-size: 18px; color: var(--color-text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.input { flex: 1; height: 44px; border: 1.5px solid var(--color-border); border-radius: var(--radius-pill); padding: 0 18px; font-size: 14px; background: var(--color-background); color: var(--color-text-primary); outline: none; transition: border-color 0.15s; }
+.input:focus { border-color: var(--color-primary); }
+.sendBtn { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+.sendBtn:hover { background: var(--color-primary-hover); }
+.disclaimer { text-align: center; font-size: 11px; color: var(--color-text-muted); padding: 8px 20px 12px; background: var(--color-surface); }

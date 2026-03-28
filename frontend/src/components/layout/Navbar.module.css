@@ -1,0 +1,67 @@
+.navbar {
+  height: 60px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoIcon {
+  width: 30px;
+  height: 30px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.logoName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.links {
+  display: flex;
+  gap: 32px;
+}
+
+.link {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--color-primary);
+}
+
+.ctaBtn {
+  background: var(--color-primary);
+  color: white;
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.ctaBtn:hover {
+  background: var(--color-primary-hover);
+}

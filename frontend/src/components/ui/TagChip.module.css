@@ -1,0 +1,43 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+}
+
+.clickable {
+  cursor: pointer;
+}
+.clickable:hover {
+  opacity: 0.8;
+}
+
+.blue {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.green {
+  background: var(--color-seeker-green-light);
+  color: var(--color-seeker-green);
+}
+
+.purple {
+  background: var(--color-helper-purple-light);
+  color: var(--color-helper-purple);
+}
+
+.red {
+  background: var(--color-alert-red-light);
+  color: var(--color-alert-red);
+}
+
+.orange {
+  background: #FFF7ED;
+  color: #C05621;
+}
