@@ -1,4 +1,4 @@
-from create_graph import chatbot
+from Chatbot.create_graph import chatbot
 
 # Run
 user_input = input("What are the scholarships available in MIT ?")

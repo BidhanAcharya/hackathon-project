@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi import APIRouter
 from app.models import Base
 from app.db.session import engine
-from app.api.routes import auth, chat, sop_review, help_request, web_socket_chat
+from app.api.routes import auth, chat, help_request, web_socket_chat
 from app.core.config import settings
 # from app.api
 
@@ -20,6 +20,5 @@ def read_root():
 
 app.include_router(auth.router)
 app.include_router(chat.router)
-app.include_router(sop_review.router)
 app.include_router(help_request.router)
 app.include_router(web_socket_chat.router)

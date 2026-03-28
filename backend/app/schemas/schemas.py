@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
-
+from app.models.models import DomainExpertise
 
 class UserLoginSchema(BaseModel):
     email : EmailStr
@@ -11,7 +11,8 @@ class UserBaseSchema(BaseModel):
     email: EmailStr
 
 class UserRegisterSchema(UserBaseSchema):
-    password: str = Field(..., min_length=8, description="password must be at least 8 characters long")
+    # password: str = Field(..., min_length=8, description="password must be at least 8 characters long")
+    password: str 
     # confirm_password: str
 
 class Message(BaseModel):

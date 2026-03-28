@@ -54,7 +54,7 @@ class User(Base):
 class UserAssessment(Base):
     __tablename__="user_assessments"
     id=Column(Integer,primary_key=True, autoincrement=True)
-    user_id=Column(Integer,ForeignKey("users.user_id"),null=False)
+    user_id=Column(Integer,ForeignKey("users.user_id"),nullable=False)
     question=Column(String,nullable=False)
     answer=Column(String,nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now())

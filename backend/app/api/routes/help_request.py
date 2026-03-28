@@ -1,14 +1,13 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from deps import get_db
-from models.models import HelpSession, SessionStatus
+from app.api.deps import get_db
+from app.models.models import HelpSession, SessionStatus
 from app.services.analyze import analyze_conversation
 from app.schemas.schemas import HelpRequestSchema, AnalyzeRequest
-from services.matching import find_available_helper
+from app.services.matching import find_available_helper
 from pydantic import BaseModel
 import uuid
-from schemas.schemas import HelpRequestSchema
 
 router = APIRouter(tags=["Help Request"], prefix="/api/v1")
 

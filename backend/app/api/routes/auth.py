@@ -6,7 +6,7 @@ from app.api.deps import get_db, get_current_user
 from app.schemas import UserRegisterSchema,UserLoginSchema, Token, RefreshTokenRequest
 from app.api.routes import crud
 from app.core.security import create_access_token, create_refresh_token, token_expired, decode_token
-from app.utils import generate_new_account_email, send_email
+# from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(tags=["auth"],prefix ="/api/v1/auth")
  
@@ -29,16 +29,16 @@ def register_user(user: UserRegisterSchema, db: Session = Depends(get_db)):
     
     print("\n ********  USER CREATED *********")
 
-    if user.email:
-        email_data = generate_new_account_email(
-            email_to=user.email, username=user.username
-        )
-        send_email(
-            email_to=user.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
-        )
-    print("\n ********  EMAIL SENT *********")
+    # if user.email:
+    #     email_data = generate_new_account_email(
+    #         email_to=user.email, username=user.username
+    #     )
+    #     send_email(
+    #         email_to=user.email,
+    #         subject=email_data.subject,
+    #         html_content=email_data.html_content,
+    #     )
+    # print("\n ********  EMAIL SENT *********")
     return { 
         "message":"User Registered Successfully",
         "user":{

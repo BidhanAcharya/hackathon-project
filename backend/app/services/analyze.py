@@ -1,10 +1,10 @@
 
 import google.generativeai as genai
-from models.models import DomainExpertise
+from app.models.models import DomainExpertise
 import re
 import json
-genai.configure(api_key="")
-model = genai.GenerativeModel("gemini-1.5-flash")
+genai.configure(api_key="AIzaSyCOIO38luqg-jil4gw18h-5VhqvpApeu7E")
+model = genai.GenerativeModel("gemini-2.0-flash")
 ALLOWED_DOMAINS = [d.value for d in DomainExpertise if d != DomainExpertise.GENERAL]
 
 

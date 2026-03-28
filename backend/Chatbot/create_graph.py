@@ -1,5 +1,5 @@
 from langgraph.graph import START, END, StateGraph
-from graph_setup import (
+from Chatbot.graph_setup import (
     GraphState,
     retrieve,
     generate,

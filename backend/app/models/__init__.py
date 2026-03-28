@@ -1,3 +1,3 @@
 from app.db.base import Base
 
-from models import User, ChatHistory, ChatSession
+from .models import User, ChatHistory, ChatSession

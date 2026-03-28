@@ -1,8 +1,8 @@
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.orm import Session
-from database import get_db
-from models.models import HelpChatHistory, HelpSession, SessionStatus
+from app.api.deps import get_db
+from app.models.models import HelpChatHistory, HelpSession, SessionStatus
 from app.services.websocket_manager import manager
 from datetime import datetime
 

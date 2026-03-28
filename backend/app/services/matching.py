@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import Session
-from models.models import Helper, HelpSession,SessionStatus,DomainExpertise
+from app.models.models import Helper, HelpSession,SessionStatus,DomainExpertise
 
 def find_available_helper(domain:DomainExpertise,db:Session):
     ## first finding specialist helper with matching domain if available

@@ -1,4 +1,4 @@
-from AdaptiveRagChatbot.create_graph import chatbot
+import google.generativeai as genai
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -6,6 +6,38 @@ from app.api.deps import get_db,TokenDep,get_current_user
 from app.models import User, ChatHistory, ChatSession  # assuming your model file is models.py
 from app.schemas import QueryRequestSchema
 from app.utils import rewrite_query
+
+# Configure Gemini model
+genai.configure(api_key="AIzaSyCOIO38luqg-jil4gw18h-5VhqvpApeu7E")
+model = genai.GenerativeModel("gemini-2.0-flash")
+
+MENTAL_HEALTH_SYSTEM_PROMPT = """You are a compassionate and supportive mental health assistant. Your role is to:
+- Listen empathetically to users' concerns
+- Provide supportive, non-judgmental responses
+- Offer helpful coping strategies and resources when appropriate
+- Encourage professional help when needed
+- Never diagnose conditions or prescribe treatments
+- Maintain a warm, caring tone throughout the conversation
+
+Remember: You are not a replacement for professional mental health care. If someone is in crisis, encourage them to contact emergency services or a crisis helpline.
+"""
+
+def get_chatbot_response(query: str, chat_context: str = None) -> str:
+    """
+    Get response from Gemini model for mental health support.
+    """
+    context_section = ""
+    if chat_context:
+        context_section = f"\n\nPrevious conversation context:\n{chat_context}\n"
+    
+    prompt = f"""{MENTAL_HEALTH_SYSTEM_PROMPT}
+{context_section}
+User's message: {query}
+
+Please provide a supportive and helpful response:"""
+    
+    response = model.generate_content(prompt)
+    return response.text
 
 
 router = APIRouter(tags=["chatbot"],prefix ="/api/v1")
@@ -78,19 +110,16 @@ async def answer_query(session_id :str,
         rewritten_query = rewrite_query(query = request.query, chat_context = chat_context)
         print("\n Rewritten Query: ", rewritten_query)
 
-        inputs = {
-            "question": rewritten_query
-        }
+        # Get response from Gemini model
+        ai_response_text = get_chatbot_response(query=rewritten_query, chat_context=chat_context)
 
-        ai_response = chatbot.invoke(inputs)
-
-        print(ai_response["question"],ai_response["generation"])
+        print("\nAI Response:", ai_response_text)
 
         # Create the AI message object
         ai_message = ChatHistory(
             session_id = session_id,
             role = "assistant",
-            content = ai_response["generation"])
+            content = ai_response_text)
 
         # Add the AI message to the session
         db.add(ai_message)
@@ -101,7 +130,7 @@ async def answer_query(session_id :str,
         db.refresh(ai_message)
 
         return {"session_id": session_id,
-                "response": ai_response["generation"] }
+                "response": ai_response_text }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
