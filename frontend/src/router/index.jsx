@@ -10,8 +10,10 @@ import AIChatPage from '../pages/AIChatPage';
 import ProfessionalSupportPage from '../pages/ProfessionalSupportPage';
 import SessionPage from '../pages/SessionPage';
 import HelperDashboard from '../pages/helper/HelperDashboard';
+import HelperAuthPage from '../pages/helper/HelperAuthPage';
 import RequestBriefPage from '../pages/helper/RequestBriefPage';
 import HelperSessionPage from '../pages/helper/HelperSessionPage';
+import HelperHistoryPage from '../pages/helper/HelperHistoryPage';
 
 function SeekerGuard({ children }) {
   const { user } = useAuth();
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/signup', element: <AuthPage /> },
   { path: '/login', element: <AuthPage /> },
+  { path: '/helper/login', element: <HelperAuthPage /> },
+  { path: '/helper/signup', element: <HelperAuthPage /> },
   { path: '/onboarding', element: <OnboardingPage /> },
   { path: '/onboarding/results', element: <OnboardingResultsPage /> },
   {
@@ -50,6 +54,10 @@ export const router = createBrowserRouter([
   {
     path: '/helper/dashboard',
     element: <HelperGuard><HelperDashboard /></HelperGuard>,
+  },
+  {
+    path: '/helper/history',
+    element: <HelperGuard><HelperHistoryPage /></HelperGuard>,
   },
   {
     path: '/helper/request/:requestId',

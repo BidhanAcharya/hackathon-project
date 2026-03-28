@@ -46,7 +46,11 @@ export default function SessionPage() {
   return (
     <AppLayout role="seeker" anonId={user?.anonId}>
       <div className={styles.sessionPage}>
-        <div className={styles.topBar}>
+        <div className={styles.pageTop}>
+          <button className={styles.backBtn} onClick={() => navigate('/dashboard')}>
+            ← Back to Dashboard
+          </button>
+          <div className={styles.topBar}>
           <div className={styles.sessionInfo}>
             <span className={styles.sessionName}>Serene Curator</span>
             <span className={styles.sessionRole}>Licensed Therapist</span>
@@ -58,6 +62,7 @@ export default function SessionPage() {
           <div className={styles.topBarRight}>
             <button className={styles.donateBtn}>● Donate</button>
             <span className={styles.timer}>12:34</span>
+          </div>
           </div>
         </div>
 

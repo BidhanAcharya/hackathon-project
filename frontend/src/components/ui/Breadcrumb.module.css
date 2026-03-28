@@ -1,0 +1,36 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  padding: 0;
+}
+.link:hover { color: #294fdb; }
+
+.sep {
+  font-size: 14px;
+  color: var(--color-border);
+  user-select: none;
+  line-height: 1;
+}
+
+.current {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}

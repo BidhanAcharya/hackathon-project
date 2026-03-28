@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import styles from './Sidebar.module.css';
 
 const seekerNav = [
@@ -9,11 +10,18 @@ const seekerNav = [
 
 const helperNav = [
   { label: 'Clinical Dashboard', icon: '⊞', to: '/helper/dashboard' },
+  { label: 'History & Feedback', icon: '📋', to: '/helper/history' },
   { label: 'Settings', icon: '⚙', to: '/helper/settings' },
 ];
 
 export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   const navItems = role === 'helper' ? helperNav : seekerNav;
 
   return (
@@ -31,7 +39,7 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) => [styles.navItem, isActive ? styles.active : ''].join(' ')}
+            className={({ isActive }) => [styles.navItem, isActive ? (role === 'helper' ? styles.helperActive : styles.active) : ''].join(' ')}
           >
             <span className={styles.navIcon}>{item.icon}</span>
             <span className={styles.navLabel}>{item.label}</span>
@@ -42,29 +50,41 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
       <div className={styles.bottom}>
         {role === 'seeker' ? (
           <>
-            <NavLink to="/help" className={styles.navItem}>
-              <span className={styles.navIcon}>?</span>
-              <span className={styles.navLabel}>Help</span>
-            </NavLink>
-            <NavLink to="/logout" className={styles.navItem}>
-              <span className={styles.navIcon}>↩</span>
-              <span className={styles.navLabel}>Logout</span>
-            </NavLink>
+            <div className={styles.helperProfile}>
+              <div className={styles.anonAvatar} />
+              <div>
+                <div className={styles.helperName}>Anon #{user?.anonId ?? anonId}</div>
+                <div className={styles.helperStatus}>
+                  <span className={styles.statusDot} />
+                  Active
+                </div>
+              </div>
+            </div>
             <button className={styles.emergencyBtn} onClick={() => navigate('/emergency')}>
               Emergency Support
             </button>
+            <button className={styles.logoutBtn} onClick={handleLogout}>
+              <span className={styles.navIcon}>↩</span>
+              <span className={styles.navLabel}>Logout</span>
+            </button>
           </>
         ) : (
-          <div className={styles.helperProfile}>
-            <div className={styles.anonAvatar} />
-            <div>
-              <div className={styles.helperName}>Dr. Aris</div>
-              <div className={styles.helperStatus}>
-                <span className={styles.statusDot} />
-                Available
+          <>
+            <div className={styles.helperProfile}>
+              <div className={styles.anonAvatar} />
+              <div>
+                <div className={styles.helperName}>{user?.name ?? 'Helper'}</div>
+                <div className={styles.helperStatus}>
+                  <span className={styles.statusDot} />
+                  Available
+                </div>
               </div>
             </div>
-          </div>
+            <button className={styles.logoutBtn} onClick={handleLogout}>
+              <span className={styles.navIcon}>↩</span>
+              <span className={styles.navLabel}>Logout</span>
+            </button>
+          </>
         )}
       </div>
     </aside>

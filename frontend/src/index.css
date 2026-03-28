@@ -15,6 +15,24 @@
   --color-helper-purple-light: #EEEDF9;
   --color-alert-red: #CC3B1A;
   --color-alert-red-light: #FFF0EC;
+
+  /* Helper portal palette — references primary so both stay in sync */
+  --color-helper-blue: var(--color-primary);           /* #3c676e */
+  --color-helper-blue-hover: var(--color-primary-hover); /* #66858a */
+  --color-helper-blue-dim: #4d8089;
+  --color-helper-blue-light: #e6f2f3;
+  --color-helper-blue-border: #b0d3d8;
+  --color-helper-blue-shadow: rgba(60, 103, 110, 0.2);
+  --color-helper-online: #16a34a;
+  --color-helper-online-bg: #dcfce7;
+  --color-feedback-impressed-bg: #dcfce7;
+  --color-feedback-impressed-text: #14532d;
+  --color-feedback-neutral-bg: #fef3c7;
+  --color-feedback-neutral-text: #78350f;
+  --color-feedback-warn-bg: #fffbeb;
+  --color-feedback-warn-border: #fde68a;
+  --color-feedback-warn-text: #78350f;
+  --color-star: #f59e0b;
   --color-background: #F5F5F3;
   --color-surface: #FFFFFF;
   --color-text-primary: #141413;
@@ -29,7 +47,7 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-pill: 9999px;
-  --sidebar-width: 200px;
+  --sidebar-width: 248px;
   --topbar-height: 56px;
 }
 

@@ -1,20 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
-import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
 import styles from './AIChatPage.module.css';
 
-const QUICK_REPLIES = ['My workload', 'A difficult meeting', 'Work-life balance', 'Something else'];
+const QUICK_REPLIES = [
+  'My workload is overwhelming',
+  'A difficult conversation',
+  'Trouble sleeping',
+  'Feeling anxious',
+  'Something else',
+];
 
 const initialMessages = [
   {
     id: 1,
     from: 'ai',
-    text: "Thanks for sharing how you're feeling, Anon #4821. I'm here to listen. Based on our onboarding, it sounds like work stress has been a bit heavy lately. What's one thing that felt particularly challenging today?",
-    time: '10:12 AM',
+    text: "Hi there. I'm glad you're here. Based on what you shared during onboarding, it sounds like things have felt heavy lately. You don't have to carry that alone. What's been on your mind most today?",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   },
 ];
+
+function formatDate() {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
 
 export default function AIChatPage() {
   const navigate = useNavigate();
@@ -24,6 +33,7 @@ export default function AIChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,84 +41,132 @@ export default function AIChatPage() {
 
   const sendMessage = (text) => {
     if (!text.trim()) return;
-    const userMsg = { id: Date.now(), from: 'user', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const userMsg = {
+      id: Date.now(),
+      from: 'user',
+      text: text.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setShowQuickReplies(false);
     setIsTyping(true);
+    inputRef.current?.focus();
+
     setTimeout(() => {
       setIsTyping(false);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         from: 'ai',
-        text: "That sounds really tough. It's okay to feel overwhelmed — what you're experiencing is valid. Can you tell me more about what's been weighing on you most?",
+        text: "That sounds really tough, and it's completely valid to feel that way. Sometimes just naming what's going on is the first step. Can you tell me a little more about what's been weighing on you most?",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
-    }, 1500);
+    }, 1800);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input);
+    }
   };
 
   return (
     <AppLayout role="seeker" anonId={user?.anonId}>
       <div className={styles.chatPage}>
-        <TopBar title="Talk to AI" subtitle="Your safe space for a quick check-in." />
+
+        {/* Chat Header */}
+        <div className={styles.chatHeader}>
+          <div className={styles.chatHeaderLeft}>
+            <div className={styles.aiAvatarLg}>🧠</div>
+            <div>
+              <p className={styles.aiName}>Mental Wizard AI</p>
+              <p className={styles.aiStatus}>
+                <span className={styles.statusDot} />
+                Always here for you
+              </p>
+            </div>
+          </div>
+          <button className={styles.humanHelpBtn} onClick={() => navigate('/professional-support')}>
+            🤝 Get Human Help
+          </button>
+        </div>
+
+        {/* Messages */}
         <div className={styles.chatArea}>
-          <div className={styles.dateSep}>TODAY</div>
+          <div className={styles.dateSep}>{formatDate()}</div>
 
           {messages.map(msg => (
-            <div key={msg.id} className={[styles.msgRow, msg.from === 'user' ? styles.userRow : styles.aiRow].join(' ')}>
-              {msg.from === 'ai' && <div className={styles.aiAvatar}>AI</div>}
+            <div
+              key={msg.id}
+              className={[styles.msgRow, msg.from === 'user' ? styles.userRow : styles.aiRow].join(' ')}
+            >
+              {msg.from === 'ai' && (
+                <div className={styles.aiAvatar}>🧠</div>
+              )}
               <div className={[styles.bubble, msg.from === 'user' ? styles.userBubble : styles.aiBubble].join(' ')}>
-                <p>{msg.text}</p>
+                <p className={styles.bubbleText}>{msg.text}</p>
                 <span className={styles.time}>{msg.time}</span>
               </div>
-              {msg.from === 'user' && <div className={styles.userAvatar} />}
             </div>
           ))}
 
+          {/* Quick replies */}
           {showQuickReplies && (
-            <div className={styles.quickReplies}>
-              {QUICK_REPLIES.map(r => (
-                <button key={r} className={styles.quickChip} onClick={() => sendMessage(r)}>{r}</button>
-              ))}
-            </div>
-          )}
-
-          {isTyping && (
-            <div className={styles.msgRow}>
-              <div className={styles.aiAvatar}>AI</div>
-              <div className={styles.aiBubble}>
-                <div className={styles.typing}><span /><span /><span /></div>
+            <div className={styles.quickSection}>
+              <p className={styles.quickLabel}>Quick replies</p>
+              <div className={styles.quickReplies}>
+                {QUICK_REPLIES.map(r => (
+                  <button key={r} className={styles.quickChip} onClick={() => sendMessage(r)}>
+                    {r}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          <div className={styles.escalation} onClick={() => navigate('/professional-support')}>
-            <div className={styles.escalationAvatar}>👤</div>
-            <div>
-              <p className={styles.escalationText}>Need a real person?</p>
-              <p className={styles.escalationCta}>GET HUMAN HELP &gt;</p>
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className={styles.msgRow}>
+              <div className={styles.aiAvatar}>🧠</div>
+              <div className={styles.aiBubble}>
+                <div className={styles.typing}>
+                  <span /><span /><span />
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           <div ref={bottomRef} />
         </div>
 
-        <div className={styles.inputBar}>
-          <button className={styles.attachBtn}>+</button>
-          <input
-            className={styles.input}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-            placeholder="Type your thoughts here..."
-          />
-          <button className={styles.sendBtn} onClick={() => sendMessage(input)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
+        {/* Input Bar */}
+        <div className={styles.inputSection}>
+          <div className={styles.inputBar}>
+            <textarea
+              ref={inputRef}
+              className={styles.input}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Share what's on your mind…"
+              rows={1}
+            />
+            <button
+              className={[styles.sendBtn, input.trim() ? styles.sendBtnActive : ''].join(' ')}
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim()}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <p className={styles.disclaimer}>
+            Mental Wizard AI provides emotional support — not clinical advice. In a crisis, call a helpline.
+          </p>
         </div>
-        <p className={styles.disclaimer}>SereneCare AI is here to support you, but it is not a clinical replacement for therapy or emergency services.</p>
+
       </div>
     </AppLayout>
   );

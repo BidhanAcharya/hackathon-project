@@ -25,6 +25,10 @@ function CommunityCard({ title, description }) {
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  const handleHelperClick = () => {
+    navigate('/helper/login');
+  };
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -43,7 +47,7 @@ export default function LandingPage() {
             <button className={styles.primaryBtn} onClick={() => navigate('/signup')}>
               I need support →
             </button>
-            <button className={styles.ghostBtn} onClick={() => navigate('/signup')}>
+            <button className={styles.ghostBtn} onClick={handleHelperClick}>
               I want to help others
             </button>
           </div>
@@ -102,7 +106,7 @@ export default function LandingPage() {
         <p className={styles.ctaSubtitle}>Join thousands finding peace of mind through Mental Wizard.</p>
         <div className={styles.ctaBtns}>
           <button className={styles.ctaBannerBtn} onClick={() => navigate('/signup')}>I need support →</button>
-          <button className={styles.ctaBannerGhost} onClick={() => navigate('/signup')}>I want to help others</button>
+          <button className={styles.ctaBannerGhost} onClick={handleHelperClick}>I want to help others</button>
         </div>
       </section>
 

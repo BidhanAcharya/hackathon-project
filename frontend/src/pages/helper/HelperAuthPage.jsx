@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import styles from './AuthPage.module.css';
+import { useAuth } from '../../context/AuthContext';
+import styles from '../AuthPage.module.css';
 
-function SignupForm({ onSwitch }) {
+function HelperSignupForm({ onSwitch }) {
   const navigate = useNavigate();
-  const { loginAsSeeker } = useAuth();
+  const { loginAsHelper } = useAuth();
   const [form, setForm] = useState({
     fullName: '',
-    aliasName: '',
     email: '',
+    licenseNumber: '',
     password: '',
     confirmPassword: '',
   });
@@ -22,7 +22,7 @@ function SignupForm({ onSwitch }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.fullName || !form.aliasName || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.fullName || !form.email || !form.licenseNumber || !form.password || !form.confirmPassword) {
       setError('Please fill in all fields.');
       return;
     }
@@ -34,17 +34,15 @@ function SignupForm({ onSwitch }) {
       setError('Password must be at least 6 characters.');
       return;
     }
-    // Mock signup — set user then go to onboarding
-    const anonId = Math.floor(1000 + Math.random() * 9000);
-    loginAsSeeker(anonId, 'mock-token');
-    navigate('/onboarding');
+    loginAsHelper(form.fullName, 'mock-token');
+    navigate('/helper/dashboard');
   };
 
   return (
     <>
       <div className={styles.cardHeader}>
-        <h1 className={styles.title}>Create your account</h1>
-        <p className={styles.subtitle}>Your safe space starts here. It's free and anonymous.</p>
+        <h1 className={styles.title}>Join as a Helper</h1>
+        <p className={styles.subtitle}>Register your credentials and start supporting others.</p>
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
@@ -55,20 +53,20 @@ function SignupForm({ onSwitch }) {
               className={styles.input}
               type="text"
               name="fullName"
-              placeholder="Your real name"
+              placeholder="Dr. Jane Smith"
               value={form.fullName}
               onChange={handleChange}
               autoComplete="name"
             />
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>Alias Name</label>
+            <label className={styles.label}>License Number</label>
             <input
               className={styles.input}
               type="text"
-              name="aliasName"
-              placeholder="How others will see you"
-              value={form.aliasName}
+              name="licenseNumber"
+              placeholder="e.g. MH-2024-0012"
+              value={form.licenseNumber}
               onChange={handleChange}
             />
           </div>
@@ -80,7 +78,7 @@ function SignupForm({ onSwitch }) {
             className={styles.input}
             type="email"
             name="email"
-            placeholder="you@example.com"
+            placeholder="you@clinic.com"
             value={form.email}
             onChange={handleChange}
             autoComplete="email"
@@ -116,12 +114,12 @@ function SignupForm({ onSwitch }) {
         {error && <p className={styles.error}>{error}</p>}
 
         <button type="submit" className={styles.submitBtn}>
-          Create Account →
+          Create Helper Account →
         </button>
       </form>
 
       <p className={styles.switchText}>
-        Already have an account?{' '}
+        Already registered?{' '}
         <button className={styles.switchLink} onClick={onSwitch}>
           Log in
         </button>
@@ -130,9 +128,9 @@ function SignupForm({ onSwitch }) {
   );
 }
 
-function LoginForm({ onSwitch }) {
+function HelperLoginForm({ onSwitch }) {
   const navigate = useNavigate();
-  const { loginAsSeeker } = useAuth();
+  const { loginAsHelper } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
@@ -147,16 +145,17 @@ function LoginForm({ onSwitch }) {
       setError('Please enter your email and password.');
       return;
     }
-    const anonId = Math.floor(1000 + Math.random() * 9000);
-    loginAsSeeker(anonId, 'mock-token');
-    navigate('/dashboard');
+    // Mock login — derive name from email
+    const name = form.email.split('@')[0];
+    loginAsHelper(name, 'mock-token');
+    navigate('/helper/dashboard');
   };
 
   return (
     <>
       <div className={styles.cardHeader}>
-        <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}>Log in to continue your journey.</p>
+        <h1 className={styles.title}>Helper Login</h1>
+        <p className={styles.subtitle}>Welcome back. Your patients are waiting.</p>
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
@@ -166,7 +165,7 @@ function LoginForm({ onSwitch }) {
             className={styles.input}
             type="email"
             name="email"
-            placeholder="you@example.com"
+            placeholder="you@clinic.com"
             value={form.email}
             onChange={handleChange}
             autoComplete="email"
@@ -194,28 +193,28 @@ function LoginForm({ onSwitch }) {
       </form>
 
       <p className={styles.switchText}>
-        Don't have an account?{' '}
+        New helper?{' '}
         <button className={styles.switchLink} onClick={onSwitch}>
-          Sign up
+          Register here
         </button>
       </p>
     </>
   );
 }
 
-export default function AuthPage() {
+export default function HelperAuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [mode, setMode] = useState(location.pathname === '/login' ? 'login' : 'signup');
+  const [mode, setMode] = useState(location.pathname === '/helper/login' ? 'login' : 'signup');
 
   const switchToLogin = () => {
     setMode('login');
-    navigate('/login', { replace: true });
+    navigate('/helper/login', { replace: true });
   };
 
   const switchToSignup = () => {
     setMode('signup');
-    navigate('/signup', { replace: true });
+    navigate('/helper/signup', { replace: true });
   };
 
   return (
@@ -223,13 +222,11 @@ export default function AuthPage() {
       <div className={styles.blobTop} />
       <div className={styles.blobBottom} />
 
-      {/* Header */}
       <header className={styles.header}>
-        <span className={styles.logo}>Mental Wizard</span>
+        <span className={styles.logo}>Mental Wizard · Helpers</span>
         <button className={styles.closeBtn} onClick={() => navigate('/')}>✕</button>
       </header>
 
-      {/* Toggle tabs */}
       <div className={styles.tabs}>
         <button
           className={[styles.tab, mode === 'signup' ? styles.tabActive : ''].join(' ')}
@@ -245,11 +242,10 @@ export default function AuthPage() {
         </button>
       </div>
 
-      {/* Card */}
       <div className={styles.card}>
         {mode === 'signup'
-          ? <SignupForm onSwitch={switchToLogin} />
-          : <LoginForm onSwitch={switchToSignup} />
+          ? <HelperSignupForm onSwitch={switchToLogin} />
+          : <HelperLoginForm onSwitch={switchToSignup} />
         }
       </div>
     </div>

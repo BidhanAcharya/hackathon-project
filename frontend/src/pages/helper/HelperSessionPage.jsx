@@ -24,12 +24,17 @@ export default function HelperSessionPage() {
   return (
     <AppLayout role="helper">
       <div className={styles.page}>
-        <div className={styles.topBar}>
-          <div>
-            <p className={styles.sessionTitle}>Session with Anon #4821</p>
-            <p className={styles.sessionTags}>Work Stress · Anxiety</p>
+        <div className={styles.pageTop}>
+          <button className={styles.backBtn} onClick={() => navigate('/helper/dashboard')}>
+            ← Back to Dashboard
+          </button>
+          <div className={styles.topBar}>
+            <div>
+              <p className={styles.sessionTitle}>Session with Anon #4821</p>
+              <p className={styles.sessionTags}>Work Stress · Anxiety</p>
+            </div>
+            <button className={styles.endBtn} onClick={() => navigate('/helper/dashboard')}>End Session</button>
           </div>
-          <button className={styles.endBtn} onClick={() => navigate('/helper/dashboard')}>End Session</button>
         </div>
 
         <div className={styles.chatArea}>
