@@ -14,7 +14,7 @@ export default function Navbar() {
         <Link to="#how-it-works" className={styles.link}>How It Works</Link>
         <Link to="#community" className={styles.link}>Community</Link>
       </div>
-      <button className={styles.ctaBtn} onClick={() => navigate('/onboarding')}>
+      <button className={styles.ctaBtn} onClick={() => navigate('/signup')}>
         Get Started
       </button>
     </nav>

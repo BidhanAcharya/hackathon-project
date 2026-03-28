@@ -40,10 +40,10 @@ export default function LandingPage() {
             Your identity is always protected.
           </p>
           <div className={styles.heroCtas}>
-            <button className={styles.primaryBtn} onClick={() => navigate('/onboarding')}>
+            <button className={styles.primaryBtn} onClick={() => navigate('/signup')}>
               I need support →
             </button>
-            <button className={styles.ghostBtn} onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+            <button className={styles.ghostBtn} onClick={() => navigate('/signup')}>
               I want to help others
             </button>
           </div>
@@ -99,8 +99,8 @@ export default function LandingPage() {
         <h2 className={styles.ctaTitle}>Ready to take a breath?</h2>
         <p className={styles.ctaSubtitle}>Join thousands finding peace of mind through Mental Wizard.</p>
         <div className={styles.ctaBtns}>
-          <button className={styles.ctaBannerBtn} onClick={() => navigate('/onboarding')}>I need support →</button>
-          <button className={styles.ctaBannerGhost}>I want to help others</button>
+          <button className={styles.ctaBannerBtn} onClick={() => navigate('/signup')}>I need support →</button>
+          <button className={styles.ctaBannerGhost} onClick={() => navigate('/signup')}>I want to help others</button>
         </div>
       </section>
 

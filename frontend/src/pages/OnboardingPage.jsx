@@ -1,59 +1,57 @@
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
-import ProgressBar from '../components/onboarding/ProgressBar';
-import QuestionCard from '../components/onboarding/QuestionCard';
 import styles from './OnboardingPage.module.css';
 
 const STEPS = [
   {
     id: 'last_okay',
     empathy: "Thanks for sharing — I know that's not easy.",
-    empathyHi: 'यहाँ आने के लिए शुक्रिया।',
+    empathyHi: 'हामी बुझ्छौं - यो साझा गर्नु सजिलो छैन।',
     question: 'When was the last time you felt truly okay?',
-    questionHi: 'आखिरी बार आपने खुद को ठीक कब महसूस किया?',
+    questionHi: 'तपाईंले अन्तिम पटक कहिले साँच्चै राम्रो महसुस गर्नुभएको थियो?',
     options: [
       { value: 'today', label: 'Today', labelHi: 'आज' },
-      { value: 'few_days', label: 'A few days ago', labelHi: 'कुछ दिन पहले' },
-      { value: 'last_week', label: 'Last week', labelHi: 'पिछले हफ्ते' },
-      { value: 'cant_remember', label: "I can't remember", labelHi: 'याद नहीं' },
+      { value: 'few_days', label: 'A few days ago', labelHi: 'केही दिन अघि' },
+      { value: 'last_week', label: 'Last week', labelHi: 'गत हप्ता' },
+      { value: 'cant_remember', label: "I can't remember", labelHi: 'मलाई सम्झना छैन' },
     ],
   },
   {
     id: 'mood',
     empathy: "You're doing great by being here.",
-    empathyHi: 'आप बहादुर हैं।',
+    empathyHi: 'तपाईं बहादुर हुनुहुन्छ।',
     question: 'Over the past 2 weeks, how often have you felt down or hopeless?',
-    questionHi: 'पिछले 2 हफ्तों में आप कितनी बार उदास या निराश महसूस किए?',
+    questionHi: 'पछिल्लो २ हप्तामा तपाईं कति पटक उदास वा निराश महसुस गर्नुभयो?',
     options: [
-      { value: 'not_at_all', label: 'Not at all', labelHi: 'बिल्कुल नहीं' },
-      { value: 'several_days', label: 'Several days', labelHi: 'कुछ दिन' },
-      { value: 'more_than_half', label: 'More than half the days', labelHi: 'आधे से ज़्यादा दिन' },
+      { value: 'not_at_all', label: 'Not at all', labelHi: 'बिल्कुल छैन' },
+      { value: 'several_days', label: 'Several days', labelHi: 'केही दिन' },
+      { value: 'more_than_half', label: 'More than half the days', labelHi: 'आधाभन्दा बढी दिन' },
       { value: 'nearly_every_day', label: 'Nearly every day', labelHi: 'लगभग हर दिन' },
     ],
   },
   {
     id: 'domain',
     empathy: 'Understanding what weighs on you most helps us connect you better.',
-    empathyHi: 'हम आपकी मदद के लिए यहाँ हैं।',
+    empathyHi: 'हामी तपाईंलाई राम्रोसँग सहयोग गर्न चाहन्छौं।',
     question: 'What area of your life feels most affected right now?',
-    questionHi: 'अभी आपके जीवन का कौन सा क्षेत्र सबसे ज़्यादा प्रभावित लगता है?',
+    questionHi: 'हाल तपाईंको जीवनको कुन क्षेत्र सबैभन्दा बढी प्रभावित छ?',
     options: [
-      { value: 'relationship', label: 'Relationship', labelHi: 'रिश्ते' },
-      { value: 'work', label: 'Work / Career', labelHi: 'काम / करियर' },
+      { value: 'relationship', label: 'Relationship', labelHi: 'सम्बन्ध' },
+      { value: 'work', label: 'Work / Career', labelHi: 'काम / क्यारियर' },
       { value: 'family', label: 'Family', labelHi: 'परिवार' },
       { value: 'financial', label: 'Financial stress', labelHi: 'आर्थिक तनाव' },
-      { value: 'other', label: 'Something else', labelHi: 'कुछ और' },
+      { value: 'other', label: 'Something else', labelHi: 'अरु केही' },
     ],
   },
   {
     id: 'helper_type',
     empathy: 'Almost done — just one more question.',
-    empathyHi: 'बस एक आखिरी सवाल।',
+    empathyHi: 'लगभग सकियो — अझ एउटा प्रश्न।',
     question: 'Who would you prefer to talk to?',
-    questionHi: 'आप किससे बात करना पसंद करेंगे?',
+    questionHi: 'तपाईं कससँग कुरा गर्न चाहनुहुन्छ?',
     options: [
-      { value: 'peer', label: 'Peer Supporter', labelHi: 'एक साथी जो समझे' },
-      { value: 'therapist', label: 'Verified Therapist', labelHi: 'लाइसेंस प्राप्त थेरेपिस्ट' },
+      { value: 'peer', label: 'Peer Supporter', labelHi: 'एक साथी जो बुझोस्' },
+      { value: 'therapist', label: 'Verified Therapist', labelHi: 'लाइसेन्स प्राप्त थेरापिस्ट' },
     ],
   },
 ];
@@ -62,7 +60,9 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const { answers, currentStep, setAnswer, nextStep, prevStep } = useOnboarding();
   const step = STEPS[currentStep];
-  const isLast = currentStep === STEPS.length - 1;
+  const total = STEPS.length;
+  const isLast = currentStep === total - 1;
+  const pct = Math.round(((currentStep + 1) / total) * 100);
 
   const handleContinue = () => {
     if (isLast) {
@@ -73,37 +73,90 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <ProgressBar step={currentStep + 1} total={STEPS.length} />
-          <button className={styles.closeBtn} onClick={() => navigate('/')}>×</button>
-        </div>
+    <div className={styles.page}>
+      {/* Background blobs */}
+      <div className={styles.blobTop} />
+      <div className={styles.blobBottom} />
 
-        <div className={styles.body}>
-          <QuestionCard
-            {...step}
-            selected={answers[step.id]}
-            onSelect={(val) => setAnswer(step.id, val)}
-          />
-        </div>
+      {/* Fixed Header */}
+      <header className={styles.header}>
+        <span className={styles.logo}>Mental Wizard</span>
+        <button className={styles.closeBtn} onClick={() => navigate('/')}>✕</button>
+      </header>
 
-        <div className={styles.footer}>
-          <button className={styles.backBtn} onClick={prevStep} disabled={currentStep === 0}>
-            ← Back
-          </button>
-          <div className={styles.footerRight}>
-            <button className={styles.skipBtn} onClick={handleContinue}>Skip for now ↓</button>
-            <button
-              className={styles.continueBtn}
-              onClick={handleContinue}
-              disabled={!answers[step.id]}
-            >
-              {isLast ? 'See My Results →' : 'Continue →'}
-            </button>
+      {/* Scrollable Main */}
+      <main className={styles.main}>
+        {/* Progress */}
+        <div className={styles.progressWrap}>
+          <div className={styles.progressMeta}>
+            <span className={styles.progressLabel}>You're doing great, Step {currentStep + 1} of {total}</span>
+            <span className={styles.progressPct}>{pct}%</span>
+          </div>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${pct}%` }} />
           </div>
         </div>
-      </div>
+
+        {/* Empathy Card */}
+        <div className={styles.empathyCard}>
+          <div className={styles.empathyIcon}>♥</div>
+          <div>
+            <h2 className={styles.empathyTitle}>{step.empathy}</h2>
+            <p className={styles.empathyHi}>{step.empathyHi}</p>
+          </div>
+        </div>
+
+        {/* Question */}
+        <div className={styles.questionWrap}>
+          <h1 className={styles.question}>{step.question}</h1>
+          <p className={styles.questionHi}>{step.questionHi}</p>
+        </div>
+
+        {/* Options */}
+        <div className={styles.options}>
+          {step.options.map((opt) => {
+            const isSelected = answers[step.id] === opt.value;
+            return (
+              <button
+                key={opt.value}
+                className={[styles.option, isSelected ? styles.optionSelected : ''].join(' ')}
+                onClick={() => setAnswer(step.id, opt.value)}
+              >
+                <div className={styles.optionText}>
+                  <span className={styles.optionLabel}>{opt.label}</span>
+                  <span className={styles.optionLabelHi}>{opt.labelHi}</span>
+                </div>
+                <div className={[styles.radio, isSelected ? styles.radioSelected : ''].join(' ')}>
+                  {isSelected && <div className={styles.radioDot} />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+      </main>
+
+      {/* Fixed Footer */}
+      <footer className={styles.footer}>
+        <button
+          className={styles.backBtn}
+          onClick={prevStep}
+          disabled={currentStep === 0}
+        >
+          ← Back
+        </button>
+        <div className={styles.footerRight}>
+          <button className={styles.skipBtn} onClick={handleContinue}>
+            Skip for now <span className={styles.skipArrow}>→</span>
+          </button>
+          <button
+            className={styles.continueBtn}
+            onClick={handleContinue}
+          >
+            {isLast ? 'See My Results' : 'Continue'} →
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
       <div className={styles.logo}>
         <span className={styles.logoIcon}>+</span>
         <div>
-          <div className={styles.logoName}>SereneCare</div>
+          <div className={styles.logoName}>Mental Wizard</div>
           <div className={styles.logoSub}>MENTAL HEALTH SUPPORT</div>
         </div>
       </div>
@@ -53,10 +53,6 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
             <button className={styles.emergencyBtn} onClick={() => navigate('/emergency')}>
               Emergency Support
             </button>
-            <div className={styles.anonBadge}>
-              <div className={styles.anonAvatar} />
-              <span>Anon #{anonId}</span>
-            </div>
           </>
         ) : (
           <div className={styles.helperProfile}>

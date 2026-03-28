@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 import LandingPage from '../pages/LandingPage';
+import AuthPage from '../pages/AuthPage';
 import OnboardingPage from '../pages/OnboardingPage';
 import OnboardingResultsPage from '../pages/OnboardingResultsPage';
 import SeekerDashboard from '../pages/SeekerDashboard';
@@ -26,6 +27,8 @@ function HelperGuard({ children }) {
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/signup', element: <AuthPage /> },
+  { path: '/login', element: <AuthPage /> },
   { path: '/onboarding', element: <OnboardingPage /> },
   { path: '/onboarding/results', element: <OnboardingResultsPage /> },
   {

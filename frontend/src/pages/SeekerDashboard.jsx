@@ -4,39 +4,80 @@ import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
 import styles from './SeekerDashboard.module.css';
 
-const recentConversations = [
-  { id: 1, title: 'Anxiety Management at Work', date: 'Today' },
-  { id: 2, title: 'Communication Breakdown', date: 'Yesterday' },
-  { id: 3, title: 'Sleep Issues', date: '3 days ago' },
+const acceptedHelpers = [
+  {
+    id: 1,
+    name: 'Dr. Priya Sharma',
+    expertise: 'Anxiety & Depression',
+    experience: '9 years',
+    hasMessage: false,
+  },
+  {
+    id: 2,
+    name: 'Rahul Mehta',
+    expertise: 'Relationship Counseling',
+    experience: '6 years',
+    hasMessage: true,
+  },
+  {
+    id: 3,
+    name: 'Dr. Nadia Kapoor',
+    expertise: 'Stress & Burnout',
+    experience: '11 years',
+    hasMessage: false,
+  },
 ];
 
 function TalkToAICard({ onStart }) {
   return (
     <div className={styles.aiCard}>
-      <div className={styles.aiCardIcon}>🤖</div>
-      <div>
+      <div className={styles.aiCardIcon}>🧠</div>
+      <div className={styles.aiCardBody}>
         <h3 className={styles.aiCardTitle}>Talk to AI</h3>
-        <p className={styles.aiCardDesc}>Our AI is ready to listen and guide you through your thoughts safely.</p>
+        <p className={styles.aiCardDesc}>
+          Our clinically-trained AI is ready to listen and guide you through your thoughts in a safe space.
+        </p>
       </div>
-      <button className={styles.aiCardBtn} onClick={onStart}>Start conversation →</button>
+      <button className={styles.aiCardBtn} onClick={onStart}>START CONVERSATION</button>
     </div>
   );
 }
 
-function GetHelpWidget({ onGetHelp }) {
+function HelperCard({ helper, onAction }) {
+  return (
+    <div className={styles.helperCard}>
+      <div className={styles.helperCardAvatar} />
+      <div className={styles.helperCardInfo}>
+        <p className={styles.helperCardName}>{helper.name}</p>
+        <p className={styles.helperCardExpertise}>{helper.expertise}</p>
+        <p className={styles.helperCardExp}>{helper.experience} experience</p>
+      </div>
+      <button
+        className={helper.hasMessage ? styles.helperCardBtnContinue : styles.helperCardBtnStart}
+        onClick={() => onAction(helper.id)}
+      >
+        {helper.hasMessage ? 'Continue' : 'Start Session'}
+      </button>
+    </div>
+  );
+}
+
+function GetHelpWidget({ onGetHelp, onHotline }) {
   return (
     <div className={styles.helpWidget}>
-      <div className={styles.helpWidgetHeader}>
-        <div className={styles.helperMini}>
-          <div className={styles.helperAvatar} />
-          <div>
-            <p className={styles.helperName}>Dr. Aris</p>
-            <span className={styles.helperBadge}>Professional Support</span>
-          </div>
-        </div>
+      <div className={styles.helpWidgetIcon}>
+        <span>+</span>
       </div>
-      <button className={styles.helpBtn} onClick={onGetHelp}>Get Help</button>
-      <p className={styles.helpOr}>Or ask address</p>
+      <h3 className={styles.helpWidgetTitle}>Get Help</h3>
+      <p className={styles.helpWidgetDesc}>
+        Access clinical expertise or emergency support services curated for your needs.
+      </p>
+      <button className={styles.helpBtn} onClick={onGetHelp}>
+        🤝 Professional Support →
+      </button>
+      <button className={styles.hotlineBtn} onClick={onHotline}>
+        Crisis Hotline 📞
+      </button>
     </div>
   );
 }
@@ -44,18 +85,24 @@ function GetHelpWidget({ onGetHelp }) {
 function StreakCard() {
   return (
     <div className={styles.streakCard}>
-      <p className={styles.streakLabel}>7-Day Consistency</p>
-      <div className={styles.streakRing}>
-        <svg width="80" height="80" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-border)" strokeWidth="8" />
-          <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-seeker-green)" strokeWidth="8"
-            strokeDasharray={`${2 * Math.PI * 34 * 0.7} ${2 * Math.PI * 34 * 0.3}`}
-            strokeDashoffset={2 * Math.PI * 34 * 0.25}
-            strokeLinecap="round" />
+      <p className={styles.streakNext}>NEXT MILESTONE</p>
+      <h3 className={styles.streakTitle}>7-Day Consistency</h3>
+      <p className={styles.streakDesc}>
+        You're just 2 sessions away from earning your 'Zen Master' badge.
+      </p>
+      <div className={styles.streakRingWrap}>
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--color-border)" strokeWidth="7" />
+          <circle
+            cx="36" cy="36" r="30" fill="none"
+            stroke="var(--color-primary)" strokeWidth="7"
+            strokeDasharray={`${2 * Math.PI * 30 * 0.7} ${2 * Math.PI * 30 * 0.3}`}
+            strokeDashoffset={2 * Math.PI * 30 * 0.25}
+            strokeLinecap="round"
+          />
         </svg>
         <span className={styles.streakPct}>70%</span>
       </div>
-      <p className={styles.streakMotivation}>Keep going — you're building a healthy habit!</p>
     </div>
   );
 }
@@ -70,30 +117,36 @@ export default function SeekerDashboard() {
       <div className={styles.content}>
         <div className={styles.left}>
           <div className={styles.greeting}>
-            <h1 className={styles.greetingTitle}>Welcome back, companion.</h1>
-            <p className={styles.greetingSubtitle}>Your mental health is our priority. How are you feeling today?</p>
+            <h1 className={styles.greetingTitle}>Welcome back, <span className={styles.greetingAnon}>Anon #{user?.anonId ?? '4821'}</span></h1>
+            <p className={styles.greetingSubtitle}>Your journey to mental clarity continues. How are you feeling today?</p>
           </div>
 
           <TalkToAICard onStart={() => navigate('/chat')} />
 
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Recent Conversations</h2>
-              <button className={styles.viewAll} onClick={() => navigate('/chat/history')}>View All Sessions →</button>
+              <h2 className={styles.sectionTitle}>Your Accepted Helpers</h2>
+              <button className={styles.viewAll} onClick={() => navigate('/professional-support')}>
+                View All →
+              </button>
             </div>
-            <div className={styles.convList}>
-              {recentConversations.map(c => (
-                <div key={c.id} className={styles.convItem} onClick={() => navigate(`/chat?session=${c.id}`)}>
-                  <span className={styles.convTitle}>{c.title}</span>
-                  <span className={styles.convDate}>{c.date}</span>
-                </div>
+            <div className={styles.helperList}>
+              {acceptedHelpers.map(h => (
+                <HelperCard
+                  key={h.id}
+                  helper={h}
+                  onAction={(id) => navigate(`/session/${id}`)}
+                />
               ))}
             </div>
           </div>
         </div>
 
         <div className={styles.right}>
-          <GetHelpWidget onGetHelp={() => navigate('/professional-support')} />
+          <GetHelpWidget
+            onGetHelp={() => navigate('/professional-support')}
+            onHotline={() => navigate('/emergency')}
+          />
           <StreakCard />
         </div>
       </div>
