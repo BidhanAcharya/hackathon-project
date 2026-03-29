@@ -10,7 +10,6 @@ function SignupForm({ onSwitch }) {
     fullName: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,12 +23,8 @@ function SignupForm({ onSwitch }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting.current) return;
-    if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.fullName || !form.email || !form.password) {
       setError('Please fill in all fields.');
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
       return;
     }
     if (form.password.length < 6) {
@@ -91,19 +86,6 @@ function SignupForm({ onSwitch }) {
             name="password"
             placeholder="Min. 6 characters"
             value={form.password}
-            onChange={handleChange}
-            autoComplete="new-password"
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>Confirm Password</label>
-          <input
-            className={styles.input}
-            type="password"
-            name="confirmPassword"
-            placeholder="Repeat your password"
-            value={form.confirmPassword}
             onChange={handleChange}
             autoComplete="new-password"
           />

@@ -1,98 +1,44 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import AppLayout from '../../components/layout/AppLayout';
+import { createWebSocketConnection, getWebSocketChatHistory, getHelpSessionDetail, closeHelpSession } from '../../api/endpoints';
 import styles from './HelperSessionPage.module.css';
 
-const initialMessages = [
-  { id: 1, from: 'seeker', text: "It's been a tough week at work, feeling a bit overwhelmed.", time: '10:10 AM' },
-];
+function BriefDrawer({ sessionData, onClose }) {
+  const assessment = sessionData?.initial_assessment;
+  const userId = sessionData?.user_id;
+  const tags = assessment?.tags || assessment?.areas_of_concern || [];
 
-const BRIEF = {
-  anonId: 'Anon #4821',
-  urgency: 'High Urgency',
-  tags: ['Work Stress', 'Anxiety'],
-  summary: '"Feeling overwhelmed with work stress and sudden anxiety peaks during meetings."',
-  needs: [
-    {
-      title: 'Immediate grounding techniques',
-      text: 'Provide actionable exercises for acute anxiety during high-pressure work scenarios.',
-    },
-    {
-      title: 'Professional validation',
-      text: 'Acknowledge and validate the validity of their work-related stressors as real clinical factors.',
-    },
-    {
-      title: 'Safe decompression space',
-      text: 'Establish a non-judgmental environment where they can vent without fear of professional repercussions.',
-    },
-  ],
-  warning: 'Escalate if you detect crisis signals or self-harm ideation during the discourse.',
-  approach:
-    'Based on the keywords "Overwhelmed" and "Meetings", consider beginning with a 2-minute breathing anchor to settle the physiological baseline before deep-diving into work triggers.',
-};
-
-function BriefDrawer({ onClose }) {
   return (
     <>
       <div className={styles.drawerOverlay} onClick={onClose} />
       <div className={styles.drawer}>
-        {/* Drawer Header */}
         <div className={styles.drawerHeader}>
           <div>
             <div className={styles.drawerUrgency}>
               <span className={styles.urgencyDot} />
-              <span className={styles.urgencyLabel}>{BRIEF.urgency}</span>
+              <span className={styles.urgencyLabel}>{assessment?.severity || 'Pending'} Urgency</span>
             </div>
-            <h3 className={styles.drawerTitle}>Request Brief — {BRIEF.anonId}</h3>
+            <h3 className={styles.drawerTitle}>Request Brief — User #{userId || '...'}</h3>
             <div className={styles.drawerTags}>
-              {BRIEF.tags.map(t => (
-                <span key={t} className={styles.tag}>{t}</span>
-              ))}
+              {tags.length > 0 ? tags.map((t, i) => (
+                <span key={i} className={styles.tag}>{t}</span>
+              )) : <span className={styles.tag}>General</span>}
             </div>
           </div>
           <button className={styles.drawerClose} onClick={onClose}>✕</button>
         </div>
-
-        {/* Drawer Body */}
         <div className={styles.drawerBody}>
-          {/* Patient Summary */}
           <div className={styles.briefSection}>
             <p className={styles.sectionLabel}>Patient Summary</p>
-            <p className={styles.summaryQuote}>{BRIEF.summary}</p>
+            <p className={styles.summaryQuote}>{assessment?.summary || assessment?.description || 'No assessment available.'}</p>
           </div>
-
-          {/* What they need */}
-          <div className={styles.briefSection}>
-            <div className={styles.needsHeader}>
-              <span className={styles.needsIcon}>🧠</span>
-              <p className={styles.sectionLabel} style={{ margin: 0 }}>What this person needs</p>
-            </div>
-            <div className={styles.needsList}>
-              {BRIEF.needs.map((need, i) => (
-                <div key={i} className={styles.needItem}>
-                  <div className={styles.needNumber}>{i + 1}</div>
-                  <div>
-                    <p className={styles.needItemTitle}>{need.title}</p>
-                    <p className={styles.needItemText}>{need.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Warning */}
           <div className={styles.warningBanner}>
             <div className={styles.warningIcon}>⚠</div>
             <div>
               <p className={styles.warningTitle}>Critical Clinical Reminder</p>
-              <p className={styles.warningText}>{BRIEF.warning}</p>
+              <p className={styles.warningText}>Escalate if you detect crisis signals or self-harm ideation during the discourse.</p>
             </div>
-          </div>
-
-          {/* Suggested Approach */}
-          <div className={styles.approachCard}>
-            <p className={styles.approachLabel}>Suggested Approach</p>
-            <p className={styles.approachText}>{BRIEF.approach}</p>
           </div>
         </div>
       </div>
@@ -102,21 +48,80 @@ function BriefDrawer({ onClose }) {
 
 export default function HelperSessionPage() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState(initialMessages);
+  const { sessionId } = useParams();
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [briefOpen, setBriefOpen] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
+  const [connected, setConnected] = useState(false);
   const bottomRef = useRef(null);
+  const wsRef = useRef(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Fetch session detail for the brief drawer
+  useEffect(() => {
+    getHelpSessionDetail(sessionId)
+      .then(data => setSessionData(data))
+      .catch(err => console.error('Failed to fetch session detail:', err));
+  }, [sessionId]);
+
+  // Load chat history then connect WebSocket
+  useEffect(() => {
+    getWebSocketChatHistory(sessionId)
+      .then(history => {
+        const mapped = history.map(msg => ({
+          id: msg.id,
+          from: msg.role,
+          text: msg.content,
+          time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }));
+        setMessages(mapped);
+      })
+      .catch(err => console.error('Failed to load chat history:', err));
+
+    const ws = createWebSocketConnection(sessionId, 'helper');
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+    ws.onmessage = (event) => {
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        from: 'user',
+        text: event.data,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [sessionId]);
+
   const sendMessage = (text) => {
-    if (!text.trim()) return;
-    setMessages(prev => [
-      ...prev,
-      { id: Date.now(), from: 'helper', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-    ]);
+    if (!text.trim() || !wsRef.current) return;
+    wsRef.current.send(text);
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      from: 'helper',
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }]);
     setInput('');
   };
+
+  const handleEndSession = async () => {
+    try {
+      await closeHelpSession(sessionId);
+    } catch (err) {
+      console.error('Failed to close session:', err);
+    }
+    if (wsRef.current) wsRef.current.close();
+    navigate('/helper/dashboard');
+  };
+
+  const userId = sessionData?.user_id;
 
   return (
     <AppLayout role="helper">
@@ -130,8 +135,8 @@ export default function HelperSessionPage() {
             <div className={styles.sessionInfo}>
               <div className={styles.seekerDot} />
               <div>
-                <p className={styles.sessionTitle}>Session with Anon #4821</p>
-                <p className={styles.sessionTags}>Work Stress · Anxiety</p>
+                <p className={styles.sessionTitle}>Session with User #{userId || '...'}</p>
+                <p className={styles.sessionTags}>{connected ? '● Connected' : '○ Disconnected'}</p>
               </div>
             </div>
             <div className={styles.topBarActions}>
@@ -146,7 +151,7 @@ export default function HelperSessionPage() {
                   <line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
-              <button className={styles.endBtn} onClick={() => navigate('/helper/dashboard')}>
+              <button className={styles.endBtn} onClick={handleEndSession}>
                 End Session
               </button>
             </div>
@@ -161,7 +166,7 @@ export default function HelperSessionPage() {
               key={msg.id}
               className={[styles.msgRow, msg.from === 'helper' ? styles.helperRow : styles.seekerRow].join(' ')}
             >
-              {msg.from === 'seeker' && <div className={styles.seekerAvatar}>A</div>}
+              {msg.from !== 'helper' && <div className={styles.seekerAvatar}>A</div>}
               <div className={[styles.bubble, msg.from === 'helper' ? styles.helperBubble : styles.seekerBubble].join(' ')}>
                 <p>{msg.text}</p>
                 <span className={styles.time}>{msg.time}</span>
@@ -194,7 +199,7 @@ export default function HelperSessionPage() {
       </div>
 
       {/* Brief drawer */}
-      {briefOpen && <BriefDrawer onClose={() => setBriefOpen(false)} />}
+      {briefOpen && <BriefDrawer sessionData={sessionData} onClose={() => setBriefOpen(false)} />}
     </AppLayout>
   );
 }

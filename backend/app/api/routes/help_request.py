@@ -92,8 +92,17 @@ def request_help(data:HelpRequestSchema, db: Session = Depends(get_db), current_
         session_id=str(uuid.uuid4()),
         user_id=current_user.user_id,
         helper_id=helper.helper_id,
-        status=SessionStatus.ACTIVE
+        status=SessionStatus.PENDING
     )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return {
+        "session_id": session.session_id,
+        "helper_id": session.helper_id,
+        "status": session.status.value
+    }
+
 # User polls this while on waiting screen
 @router.get("/status/{session_id}")
 def get_session_status(session_id: str, db: Session = Depends(get_db)):
@@ -107,12 +116,43 @@ def get_session_status(session_id: str, db: Session = Depends(get_db)):
     return { "status": session.status }
 
 
+## Get session details with user info (for helper's request brief page)
+@router.get("/session-detail/{session_id}")
+def get_session_detail(session_id: str, db: Session = Depends(get_db)):
+    session = db.query(HelpSession).filter(
+        HelpSession.session_id == session_id
+    ).first()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    user = db.query(User).filter(User.user_id == session.user_id).first()
+
+    return {
+        "session_id": session.session_id,
+        "user_id": session.user_id,
+        "helper_id": session.helper_id,
+        "status": session.status,
+        "created_at": session.created_at,
+        "initial_assessment": user.initial_assesment if user else None,
+    }
+
+
+## Helper sees all active sessions assigned to them
+@router.get("/active/{helper_id}")
+def get_active_sessions(helper_id: int, db: Session = Depends(get_db)):
+    sessions = db.query(HelpSession).filter(
+        HelpSession.helper_id == helper_id,
+        HelpSession.status == SessionStatus.ACTIVE
+    ).all()
+    return sessions
+
 
 ## Helper sees all pending requests assigned to them
 @router.get("/pending/{helper_id}")
-def get_pending_requests(helper_i:int, db:Session=Depends(get_db)):
+def get_pending_requests(helper_id:int, db:Session=Depends(get_db)):
     sessions=db.query(HelpSession).filter(
-        HelpSession.helper_id==helper_i,
+        HelpSession.helper_id==helper_id,
         HelpSession.status==SessionStatus.PENDING
     ).all()
     return sessions
@@ -174,6 +214,22 @@ def accept_request(session_id:str,db:Session=Depends(get_db)):
     # }
     
     
+## Get all available helpers
+@router.get("/helpers")
+def get_all_helpers(db: Session = Depends(get_db)):
+    from app.models.models import Helper
+    helpers = db.query(Helper).all()
+    return [
+        {
+            "helper_id": h.helper_id,
+            "username": h.username,
+            "email": h.email,
+            "domain_expertise": h.domain_expertise,
+        }
+        for h in helpers
+    ]
+
+
 ## Web socket closed by either side
 @router.post("/close/{session_id}")
 def close_session(session_id: str, db: Session = Depends(get_db)):

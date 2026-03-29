@@ -9,7 +9,9 @@ def start_app():
         "app.main:app",
         host = "0.0.0.0",
         port = int(env_vars.get("PORT", 8000)),
-        reload = True if (env_vars.get("DEPLOYMENT") or "DEV").upper()!= "PROD" else False
+        reload = True if (env_vars.get("DEPLOYMENT") or "DEV").upper()!= "PROD" else False,
+        ws = "websockets",
+        reload_dirs=["app"]
     )
     
 if __name__ == "__main__":

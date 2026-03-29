@@ -1,23 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AppLayout from '../../components/layout/AppLayout';
+import { getHelpSessionDetail, acceptHelpRequest } from '../../api/endpoints';
 import styles from './RequestBriefPage.module.css';
 
 export default function RequestBriefPage() {
   const navigate = useNavigate();
   const { requestId } = useParams();
-  const [replyOpen, setReplyOpen] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [replySent, setReplySent] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
 
-  const handleOpenSession = () => navigate(`/helper/session/${requestId}`);
-  const handlePass = () => navigate('/helper/dashboard');
-  const handleSendReply = () => {
-    if (!replyText.trim()) return;
-    setReplySent(true);
-    setReplyOpen(false);
-    setReplyText('');
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        const data = await getHelpSessionDetail(requestId);
+        setSessionData(data);
+      } catch (err) {
+        console.error('Failed to fetch session detail:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSession();
+  }, [requestId]);
+
+  const assessment = sessionData?.initial_assessment;
+  const userId = sessionData?.user_id;
+  const tags = assessment?.tags || assessment?.areas_of_concern || [];
+
+  const handleOpenSession = async () => {
+    try {
+      setAccepting(true);
+      await acceptHelpRequest(requestId);
+      navigate(`/helper/session/${requestId}`);
+    } catch (err) {
+      console.error('Failed to accept session:', err);
+      alert('Failed to accept session. It may have already been accepted.');
+    } finally {
+      setAccepting(false);
+    }
   };
+  const handlePass = () => navigate('/helper/dashboard');
 
   return (
     <AppLayout role="helper">
@@ -26,18 +50,20 @@ export default function RequestBriefPage() {
           <button className={styles.backBtn} onClick={() => navigate('/helper/dashboard')}>
             ← Back to Dashboard
           </button>
+          {loading && <p>Loading session details...</p>}
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <div>
               <div className={styles.urgencyIndicator}>
                 <span className={styles.urgencyDot} />
-                <span className={styles.urgencyLabel}>High Urgency Request</span>
+                <span className={styles.urgencyLabel}>{assessment?.severity || 'Pending'} Urgency Request</span>
               </div>
-              <h2 className={styles.pageTitle}>Anonymous Request Brief — Anon #4821</h2>
+              <h2 className={styles.pageTitle}>Anonymous Request Brief — User #{userId || '...'}</h2>
             </div>
             <div className={styles.tagRow}>
-              <span className={styles.tag}>Work Stress</span>
-              <span className={styles.tag}>Anxiety</span>
+              {tags.length > 0 ? tags.map((tag, i) => (
+                <span className={styles.tag} key={i}>{tag}</span>
+              )) : <span className={styles.tag}>General</span>}
             </div>
           </div>
 
@@ -49,7 +75,7 @@ export default function RequestBriefPage() {
               <div className={styles.summaryCard}>
                 <p className={styles.cardLabel}>Patient Summary</p>
                 <p className={styles.summaryQuote}>
-                  "Feeling overwhelmed with work stress and sudden anxiety peaks during meetings."
+                  {assessment?.summary || assessment?.description || 'No assessment available yet.'}
                 </p>
               </div>
 
@@ -100,41 +126,13 @@ export default function RequestBriefPage() {
               <div className={styles.actionPanel}>
                 <p className={styles.cardLabel}>Session Actions</p>
                 <div className={styles.actionBtns}>
-                  <button className={styles.acceptBtn} onClick={handleOpenSession}>
-                    ▶ Open Session
-                  </button>
-                  <button
-                    className={styles.quickReplyBtn}
-                    onClick={() => setReplyOpen(prev => !prev)}
-                  >
-                    💬 Send Quick Reply
+                  <button className={styles.acceptBtn} onClick={handleOpenSession} disabled={accepting}>
+                    {accepting ? '⏳ Accepting...' : '▶ Open Session'}
                   </button>
                   <button className={styles.passBtn} onClick={handlePass}>
                     → Pass to another helper
                   </button>
                 </div>
-
-                {replyOpen && (
-                  <div className={styles.replyBox}>
-                    <textarea
-                      className={styles.replyInput}
-                      placeholder="Type a reply to send without opening a session..."
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      rows={3}
-                    />
-                    <div className={styles.replyBoxActions}>
-                      <button className={styles.replySendBtn} onClick={handleSendReply}>Send</button>
-                      <button className={styles.replyCancelBtn} onClick={() => setReplyOpen(false)}>Cancel</button>
-                    </div>
-                  </div>
-                )}
-
-                {replySent && (
-                  <div className={styles.replySentNote}>
-                    ✓ Reply sent to the seeker.
-                  </div>
-                )}
 
                 <div className={styles.metaRows}>
                   <div className={styles.metaRow}>

@@ -214,11 +214,30 @@ export async function getHelpSessionStatus(sessionId) {
 }
 
 /**
+ * Get help session detail with user info
+ * GET /api/v1/session-detail/{session_id}
+ * Returns: { session_id, user_id, helper_id, status, created_at, initial_assessment }
+ */
+export async function getHelpSessionDetail(sessionId) {
+  const response = await apiClient.get(`/api/v1/session-detail/${sessionId}`);
+  return response.data;
+}
+
+/**
  * Get pending requests for a helper
  * GET /api/v1/pending/{helper_id}
  */
 export async function getPendingRequests(helperId) {
   const response = await apiClient.get(`/api/v1/pending/${helperId}`);
+  return response.data;
+}
+
+/**
+ * Get active sessions for a helper
+ * GET /api/v1/active/{helper_id}
+ */
+export async function getActiveSessions(helperId) {
+  const response = await apiClient.get(`/api/v1/active/${helperId}`);
   return response.data;
 }
 
@@ -239,6 +258,16 @@ export async function acceptHelpRequest(sessionId) {
  */
 export async function closeHelpSession(sessionId) {
   const response = await apiClient.post(`/api/v1/close/${sessionId}`);
+  return response.data;
+}
+
+/**
+ * Get all available helpers
+ * GET /api/v1/helpers
+ * Returns: [{ helper_id, username, email, domain_expertise }]
+ */
+export async function getAllHelpers() {
+  const response = await apiClient.get('/api/v1/helpers');
   return response.data;
 }
 
