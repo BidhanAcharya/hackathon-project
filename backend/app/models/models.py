@@ -17,6 +17,10 @@ class SessionStatus(enum.Enum):
     ACTIVE="active"
     CLOSED="closed"
 
+class HelperRole(enum.Enum):
+    PEER="peer"
+    THERAPIST="therapist"
+
 
 # Table to store individual chat session information only
 class ChatSession(Base):
@@ -45,6 +49,7 @@ class User(Base):
     username = Column(String(200), index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String, nullable=False)
+    alias = Column(String(100), nullable=True)   # anonymous display name shown to helpers
     chat_sessions = relationship("ChatSession", back_populates="user")
     help_sessions = relationship("HelpSession", back_populates="user")
     assessments = relationship("UserAssessment", back_populates="user")
@@ -66,9 +71,13 @@ class Helper(Base):
     username=Column(String(200),index=True)
     email=Column(String,unique=True,index=True)
     password=Column(String,nullable=False)
-    domain_expertise=Column(Enum(DomainExpertise), nullable=False)
+    domain_expertise=Column(Enum(DomainExpertise), nullable=True, default=DomainExpertise.GENERAL)
+    role=Column(String(20), nullable=True)        # "peer" or "therapist"
+    proof_id=Column(String(200), nullable=True)   # required for therapist (license/credential ID)
+    alias=Column(String(100), nullable=True)      # anonymous display name shown to seekers
     help_sessions=relationship("HelpSession", back_populates="helper")
     assessments = relationship("HelperAssessment", back_populates="helper")
+    acceptances = relationship("HelpRequestAcceptance", back_populates="helper")
     
     
  ## Assessment table store the question and answer collected for helper  
@@ -90,13 +99,44 @@ class HelpSession(Base):
     session_id=Column(String(36), primary_key=True, default = lambda: str(uuid.uuid4()))
     user_id=Column(Integer, ForeignKey("users.user_id"))
     helper_id=Column(Integer, ForeignKey("helpers.helper_id"), nullable=True)
-    status = Column(Enum(SessionStatus), default=SessionStatus.PENDING) ## This one to track whether the particuaar one to one session is closed or not , if the status is  closed then other user can be assigned and if the status is active then another user is in queue, while querying check the status too with the domain expertise
+    status = Column(Enum(SessionStatus), default=SessionStatus.PENDING)
+    message=Column(String, nullable=True)
+    helper_type=Column(String(20), nullable=True)  # "peer" or "therapist"
+    categories=Column(String, nullable=True)        # comma-separated, e.g. "Anxiety,Work Stress"
     created_at=Column(DateTime, nullable=False, default=datetime.now())
-    
+
     user=relationship("User",back_populates="help_sessions")
     helper=relationship("Helper",back_populates="help_sessions")
     messages=relationship("HelpChatHistory", back_populates="help_session")
+    acceptances=relationship("HelpRequestAcceptance", back_populates="help_session")
+    feedback=relationship("SessionFeedback", back_populates="help_session", uselist=False)
+
+
+# Tracks which helpers have accepted a help request (up to 3 per session)
+class HelpRequestAcceptance(Base):
+    __tablename__ = "help_request_acceptances"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(36), ForeignKey("help_sessions.session_id"), nullable=False)
+    helper_id = Column(Integer, ForeignKey("helpers.helper_id"), nullable=False)
+    accepted_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    help_session = relationship("HelpSession", back_populates="acceptances")
+    helper = relationship("Helper", back_populates="acceptances")
     
+# Seeker feedback for a closed session (one per session)
+class SessionFeedback(Base):
+    __tablename__ = "session_feedbacks"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(36), ForeignKey("help_sessions.session_id"), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    rating = Column(Integer, nullable=False)            # 1–5
+    feedback_type = Column(String(20), nullable=False)  # impressed | neutral | not_impressed
+    note = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    help_session = relationship("HelpSession", back_populates="feedback")
+
+
 class HelpChatHistory(Base):
     __tablename__="help_chat_history"
     id=Column(Integer,primary_key=True, autoincrement=True)

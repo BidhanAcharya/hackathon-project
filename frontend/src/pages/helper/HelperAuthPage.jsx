@@ -11,6 +11,9 @@ function HelperSignupForm({ onSwitch }) {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'peer',          // 'peer' or 'therapist'
+    proofId: '',           // required for therapist
+    alias: '',             // optional display name
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,11 +24,16 @@ function HelperSignupForm({ onSwitch }) {
     setError('');
   };
 
+  const handleRoleSelect = (role) => {
+    setForm((prev) => ({ ...prev, role, proofId: '', alias: '' }));
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting.current) return;
     if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
-      setError('Please fill in all fields.');
+      setError('Please fill in all required fields.');
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -36,10 +44,21 @@ function HelperSignupForm({ onSwitch }) {
       setError('Password must be at least 6 characters.');
       return;
     }
+    if (form.role === 'therapist' && !form.proofId.trim()) {
+      setError('Therapists must provide a Proof ID (license or credential number).');
+      return;
+    }
     submitting.current = true;
     setLoading(true);
     try {
-      await signupAsHelper({ username: form.fullName, email: form.email, password: form.password });
+      await signupAsHelper({
+        username: form.fullName,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        proof_id: form.role === 'therapist' ? form.proofId.trim() : undefined,
+        alias: form.alias.trim() || undefined,
+      });
       navigate('/helper/dashboard');
     } catch (err) {
       setError(err.message || 'Sign up failed. Please try again.');
@@ -57,13 +76,59 @@ function HelperSignupForm({ onSwitch }) {
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        {/* Role selection */}
+        <div className={styles.field}>
+          <label className={styles.label}>I am a</label>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.4rem' }}>
+            <button
+              type="button"
+              onClick={() => handleRoleSelect('peer')}
+              style={{
+                flex: 1,
+                padding: '0.65rem 1rem',
+                borderRadius: '10px',
+                border: form.role === 'peer' ? '2px solid #6c63ff' : '1.5px solid #e0e0e0',
+                background: form.role === 'peer' ? '#f0eeff' : '#fafafa',
+                color: form.role === 'peer' ? '#6c63ff' : '#555',
+                fontWeight: form.role === 'peer' ? 700 : 400,
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
+            >
+              🤝 Peer Supporter
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleSelect('therapist')}
+              style={{
+                flex: 1,
+                padding: '0.65rem 1rem',
+                borderRadius: '10px',
+                border: form.role === 'therapist' ? '2px solid #0ea5e9' : '1.5px solid #e0e0e0',
+                background: form.role === 'therapist' ? '#e0f4ff' : '#fafafa',
+                color: form.role === 'therapist' ? '#0ea5e9' : '#555',
+                fontWeight: form.role === 'therapist' ? 700 : 400,
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
+            >
+              🩺 Verified Therapist
+            </button>
+          </div>
+          <p style={{ fontSize: '0.78rem', color: '#888', marginTop: '0.4rem' }}>
+            {form.role === 'peer'
+              ? 'You will support seekers looking for peer emotional support.'
+              : 'You will support seekers seeking professional therapy. Proof ID required.'}
+          </p>
+        </div>
+
         <div className={styles.field}>
           <label className={styles.label}>Full Name</label>
           <input
             className={styles.input}
             type="text"
             name="fullName"
-            placeholder="Dr. Jane Smith"
+            placeholder={form.role === 'therapist' ? 'Dr. Jane Smith' : 'Your name'}
             value={form.fullName}
             onChange={handleChange}
             autoComplete="name"
@@ -76,7 +141,7 @@ function HelperSignupForm({ onSwitch }) {
             className={styles.input}
             type="email"
             name="email"
-            placeholder="you@clinic.com"
+            placeholder={form.role === 'therapist' ? 'you@clinic.com' : 'you@example.com'}
             value={form.email}
             onChange={handleChange}
             autoComplete="email"
@@ -108,6 +173,44 @@ function HelperSignupForm({ onSwitch }) {
             autoComplete="new-password"
           />
         </div>
+
+        {/* Therapist: Proof ID (required) */}
+        {form.role === 'therapist' && (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Proof ID <span style={{ color: '#e53e3e' }}>*</span>
+            </label>
+            <input
+              className={styles.input}
+              type="text"
+              name="proofId"
+              placeholder="License or credential number (e.g. PSY-123456)"
+              value={form.proofId}
+              onChange={handleChange}
+            />
+            <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
+              Your credential will be verified before you appear to seekers.
+            </p>
+          </div>
+        )}
+
+        {/* Peer: Alias (optional) */}
+        {form.role === 'peer' && (
+          <div className={styles.field}>
+            <label className={styles.label}>Display Alias <span style={{ color: '#aaa', fontWeight: 400 }}>(optional)</span></label>
+            <input
+              className={styles.input}
+              type="text"
+              name="alias"
+              placeholder="e.g. CalmMind · leave blank for random"
+              value={form.alias}
+              onChange={handleChange}
+            />
+            <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
+              Seekers will see this name. Leave blank and we'll assign one like "Peer_4821".
+            </p>
+          </div>
+        )}
 
         {error && <p className={styles.error}>{error}</p>}
 

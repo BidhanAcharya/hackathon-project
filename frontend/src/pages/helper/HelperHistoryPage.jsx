@@ -1,75 +1,8 @@
+import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '../../components/layout/AppLayout';
+import { useAuth } from '../../context/AuthContext';
+import { getHelperHistory } from '../../api/helpRequest';
 import styles from './HelperHistoryPage.module.css';
-
-const stats = [
-  { label: 'Total Sessions', value: '142' },
-  { label: 'Avg Rating', value: '4.9 ★' },
-  { label: 'Response Rate', value: '98%' },
-  { label: 'Impressed Rate', value: '91%' },
-];
-
-const history = [
-  {
-    id: 'h1',
-    anonId: '9921',
-    date: 'Mar 27, 2026',
-    duration: '48 min',
-    tags: ['Work Stress', 'Anxiety'],
-    rating: 5,
-    feedback: 'impressed',
-    feedbackNote: 'The helper was incredibly patient and the breathing exercise actually helped. Felt heard.',
-  },
-  {
-    id: 'h2',
-    anonId: '3342',
-    date: 'Mar 26, 2026',
-    duration: '31 min',
-    tags: ['Sleep', 'Lifestyle'],
-    rating: 4,
-    feedback: 'impressed',
-    feedbackNote: "Good session. Would have liked more specific sleep routine advice, but overall felt supported.",
-  },
-  {
-    id: 'h3',
-    anonId: '7751',
-    date: 'Mar 25, 2026',
-    duration: '22 min',
-    tags: ['Relationship', 'Stress'],
-    rating: 3,
-    feedback: 'neutral',
-    feedbackNote: "Session was okay. Felt a little rushed toward the end.",
-  },
-  {
-    id: 'h4',
-    anonId: '1042',
-    date: 'Mar 24, 2026',
-    duration: '55 min',
-    tags: ['Family', 'Anxiety'],
-    rating: 5,
-    feedback: 'impressed',
-    feedbackNote: "One of the best sessions I've had. Dr. Aris really understood what I was going through.",
-  },
-  {
-    id: 'h5',
-    anonId: '5510',
-    date: 'Mar 23, 2026',
-    duration: '18 min',
-    tags: ['Work', 'Burnout'],
-    rating: 2,
-    feedback: 'not_impressed',
-    feedbackNote: 'Felt like the session was too generic. Needed more personalised advice.',
-  },
-  {
-    id: 'h6',
-    anonId: '8834',
-    date: 'Mar 22, 2026',
-    duration: '40 min',
-    tags: ['Wellness', 'Focus'],
-    rating: 5,
-    feedback: 'impressed',
-    feedbackNote: 'Very calming and grounding. The mindfulness tips were super practical.',
-  },
-];
 
 const FEEDBACK_CONFIG = {
   impressed: { label: 'Impressed', className: 'badgeImpressed' },
@@ -87,7 +20,49 @@ function StarRating({ value }) {
   );
 }
 
+function timeAgo(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const ROLE_LABEL = {
+  peer: 'Peer Supporter',
+  therapist: 'Verified Therapist',
+};
+
 export default function HelperHistoryPage() {
+  const { user } = useAuth();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadHistory = useCallback(() => {
+    if (!user?.accessToken) return;
+    getHelperHistory(user.accessToken)
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [user?.accessToken]);
+
+  // Initial load + live polling every 30 s so new closed sessions appear automatically
+  useEffect(() => {
+    loadHistory();
+    const interval = setInterval(loadHistory, 30000);
+    return () => clearInterval(interval);
+  }, [loadHistory]);
+
+  const sessions = data?.sessions ?? [];
+  const stats = data?.stats ?? {};
+
+  const initials = (user?.username || 'H').slice(0, 2).toUpperCase();
+  const helperRole = user?.helperRole || 'peer';
+  const roleLabel = ROLE_LABEL[helperRole] || 'Helper';
+
+  const displayStats = [
+    { label: 'Total Sessions', value: stats.total ?? 0 },
+    { label: 'Avg Rating', value: stats.avg_rating != null ? `${stats.avg_rating} ★` : '—' },
+    { label: 'Response Rate', value: '—' },
+    { label: 'Impressed Rate', value: stats.impressed_rate != null ? `${stats.impressed_rate}%` : '—' },
+  ];
+
   return (
     <AppLayout role="helper">
       <div className={styles.page}>
@@ -95,20 +70,32 @@ export default function HelperHistoryPage() {
         {/* Profile header */}
         <div className={styles.profileHeader}>
           <div className={styles.avatarWrap}>
-            <div className={styles.avatar}>DA</div>
+            <div className={styles.avatar}>{initials}</div>
             <span className={styles.onlineBadge} />
           </div>
           <div className={styles.profileInfo}>
-            <h1 className={styles.profileName}>Dr. Aris</h1>
-            <p className={styles.profileRole}>Senior Lead Helper · Mental Health Support</p>
+            <h1 className={styles.profileName}>
+              {user?.alias || `Helper #${user?.userId}`}
+            </h1>
+            <p className={styles.profileRole}>
+              {user?.username} ·{' '}
+              <span
+                style={{
+                  color: helperRole === 'therapist' ? '#0ea5e9' : '#6c63ff',
+                  fontWeight: 600,
+                }}
+              >
+                {helperRole === 'therapist' ? '🩺' : '🤝'} {roleLabel}
+              </span>
+            </p>
           </div>
         </div>
 
         {/* Stats row */}
         <div className={styles.statsRow}>
-          {stats.map(s => (
+          {displayStats.map(s => (
             <div key={s.label} className={styles.statCard}>
-              <span className={styles.statValue}>{s.value}</span>
+              <span className={styles.statValue}>{loading ? '…' : s.value}</span>
               <span className={styles.statLabel}>{s.label}</span>
             </div>
           ))}
@@ -116,42 +103,73 @@ export default function HelperHistoryPage() {
 
         {/* Section title */}
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Session History & Patient Feedback</h2>
-          <span className={styles.count}>{history.length} sessions</span>
+          <h2 className={styles.sectionTitle}>Session History & Feedback</h2>
+          <span className={styles.count}>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
         </div>
+
+        {loading && (
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Loading history…</p>
+        )}
+
+        {!loading && sessions.length === 0 && (
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', padding: '1rem 0' }}>
+            No closed sessions yet. Your session history will appear here once sessions end.
+          </p>
+        )}
 
         {/* History list */}
         <div className={styles.historyList}>
-          {history.map(item => {
-            const fb = FEEDBACK_CONFIG[item.feedback];
+          {sessions.map(item => {
+            const fb = item.feedback ? FEEDBACK_CONFIG[item.feedback.feedback_type] : null;
             return (
-              <div key={item.id} className={styles.historyCard}>
+              <div key={item.session_id} className={styles.historyCard}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardLeft}>
                     <div className={styles.cardMeta}>
-                      <span className={styles.anonId}>Anon #{item.anonId}</span>
+                      <span className={styles.anonId}>
+                        {item.seeker_alias || `Anon_${item.user_id}`}
+                      </span>
                       <span className={styles.metaDot} />
-                      <span className={styles.date}>{item.date}</span>
+                      <span className={styles.date}>{timeAgo(item.created_at)}</span>
                       <span className={styles.metaDot} />
-                      <span className={styles.duration}>{item.duration}</span>
+                      <span className={styles.duration}>
+                        {item.helper_type === 'therapist' ? '🩺 Therapist' : '🤝 Peer'}
+                      </span>
                     </div>
-                    <div className={styles.tagRow}>
-                      {item.tags.map(t => (
-                        <span key={t} className={styles.tag}>{t}</span>
-                      ))}
-                    </div>
+                    {item.categories?.length > 0 && (
+                      <div className={styles.tagRow}>
+                        {item.categories.map(t => (
+                          <span key={t} className={styles.tag}>{t}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className={styles.cardRight}>
-                    <StarRating value={item.rating} />
-                    <span className={[styles.feedbackBadge, styles[fb.className]].join(' ')}>
-                      {fb.label}
-                    </span>
+                    {item.feedback ? (
+                      <>
+                        <StarRating value={item.feedback.rating} />
+                        <span className={[styles.feedbackBadge, styles[fb.className]].join(' ')}>
+                          {fb.label}
+                        </span>
+                      </>
+                    ) : (
+                      <span className={[styles.feedbackBadge, styles.badgeNeutral].join(' ')}>
+                        No feedback
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className={styles.feedbackNote}>
-                  <span className={styles.quoteIcon}>"</span>
-                  {item.feedbackNote}
-                </div>
+                {item.feedback?.note && (
+                  <div className={styles.feedbackNote}>
+                    <span className={styles.quoteIcon}>"</span>
+                    {item.feedback.note}
+                  </div>
+                )}
+                {!item.feedback && (
+                  <div className={styles.feedbackNote} style={{ color: 'var(--color-text-muted)', fontStyle: 'normal' }}>
+                    The seeker did not leave feedback for this session.
+                  </div>
+                )}
               </div>
             );
           })}

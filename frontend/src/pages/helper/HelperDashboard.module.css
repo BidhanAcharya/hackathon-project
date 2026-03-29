@@ -367,3 +367,125 @@
   transition: background 0.15s;
 }
 .capacityBtn:hover { background: rgba(255,255,255,0.3); }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  width: fit-content;
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: calc(var(--radius-lg) - 2px);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.tabBtn:hover { color: var(--color-text-primary); }
+.tabActive {
+  background: var(--color-helper-blue);
+  color: #ffffff;
+}
+.tabActive:hover { color: #ffffff; }
+
+.tabBadge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.25);
+  color: inherit;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  min-width: 20px;
+  text-align: center;
+}
+.tabBtn:not(.tabActive) .tabBadge {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* Tab content */
+.tabContent { display: flex; flex-direction: column; gap: 20px; }
+
+/* Category filters */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filterChip {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.filterChip:hover {
+  border-color: var(--color-helper-blue);
+  color: var(--color-helper-blue);
+}
+.filterChipActive {
+  background: var(--color-helper-blue-light);
+  border-color: var(--color-helper-blue);
+  color: var(--color-helper-blue);
+}
+
+.filterClear {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-alert-red-light);
+  color: var(--color-alert-red);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.filterClear:hover { opacity: 0.8; }
+
+/* Slot badge */
+.slotBadge {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+}
+
+/* Empty state */
+.emptyState {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 2rem 0;
+  text-align: center;
+}

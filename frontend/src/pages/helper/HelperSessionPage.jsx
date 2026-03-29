@@ -1,98 +1,79 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import AppLayout from '../../components/layout/AppLayout';
+import { useAuth } from '../../context/AuthContext';
+import { getSession, getChatHistory, closeSession } from '../../api/helpRequest';
 import styles from './HelperSessionPage.module.css';
 
-const initialMessages = [
-  { id: 1, from: 'seeker', text: "It's been a tough week at work, feeling a bit overwhelmed.", time: '10:10 AM' },
-];
+const WS_BASE = 'ws://localhost:8000';
 
-const BRIEF = {
-  anonId: 'Anon #4821',
-  urgency: 'High Urgency',
-  tags: ['Work Stress', 'Anxiety'],
-  summary: '"Feeling overwhelmed with work stress and sudden anxiety peaks during meetings."',
-  needs: [
-    {
-      title: 'Immediate grounding techniques',
-      text: 'Provide actionable exercises for acute anxiety during high-pressure work scenarios.',
-    },
-    {
-      title: 'Professional validation',
-      text: 'Acknowledge and validate the validity of their work-related stressors as real clinical factors.',
-    },
-    {
-      title: 'Safe decompression space',
-      text: 'Establish a non-judgmental environment where they can vent without fear of professional repercussions.',
-    },
-  ],
-  warning: 'Escalate if you detect crisis signals or self-harm ideation during the discourse.',
-  approach:
-    'Based on the keywords "Overwhelmed" and "Meetings", consider beginning with a 2-minute breathing anchor to settle the physiological baseline before deep-diving into work triggers.',
-};
+function BriefDrawer({ session, onClose }) {
+  const message = session?.message || 'No message provided.';
+  const helperType = session?.helper_type === 'therapist' ? 'Therapist Request' : 'Peer Support';
 
-function BriefDrawer({ onClose }) {
   return (
     <>
       <div className={styles.drawerOverlay} onClick={onClose} />
       <div className={styles.drawer}>
-        {/* Drawer Header */}
         <div className={styles.drawerHeader}>
           <div>
             <div className={styles.drawerUrgency}>
               <span className={styles.urgencyDot} />
-              <span className={styles.urgencyLabel}>{BRIEF.urgency}</span>
+              <span className={styles.urgencyLabel}>{helperType}</span>
             </div>
-            <h3 className={styles.drawerTitle}>Request Brief — {BRIEF.anonId}</h3>
+            <h3 className={styles.drawerTitle}>Request Brief — User #{session?.user_id}</h3>
             <div className={styles.drawerTags}>
-              {BRIEF.tags.map(t => (
-                <span key={t} className={styles.tag}>{t}</span>
-              ))}
+              <span className={styles.tag}>{session?.helper_type === 'therapist' ? 'Therapist' : 'Peer'}</span>
+              {session?.acceptance_count > 0 && (
+                <span className={styles.tag}>{session.acceptance_count}/3 helpers</span>
+              )}
             </div>
           </div>
           <button className={styles.drawerClose} onClick={onClose}>✕</button>
         </div>
 
-        {/* Drawer Body */}
         <div className={styles.drawerBody}>
-          {/* Patient Summary */}
           <div className={styles.briefSection}>
-            <p className={styles.sectionLabel}>Patient Summary</p>
-            <p className={styles.summaryQuote}>{BRIEF.summary}</p>
+            <p className={styles.sectionLabel}>What they shared</p>
+            <p className={styles.summaryQuote}>"{message}"</p>
           </div>
 
-          {/* What they need */}
           <div className={styles.briefSection}>
             <div className={styles.needsHeader}>
               <span className={styles.needsIcon}>🧠</span>
-              <p className={styles.sectionLabel} style={{ margin: 0 }}>What this person needs</p>
+              <p className={styles.sectionLabel} style={{ margin: 0 }}>How to help</p>
             </div>
             <div className={styles.needsList}>
-              {BRIEF.needs.map((need, i) => (
-                <div key={i} className={styles.needItem}>
-                  <div className={styles.needNumber}>{i + 1}</div>
-                  <div>
-                    <p className={styles.needItemTitle}>{need.title}</p>
-                    <p className={styles.needItemText}>{need.text}</p>
-                  </div>
+              <div className={styles.needItem}>
+                <div className={styles.needNumber}>1</div>
+                <div>
+                  <p className={styles.needItemTitle}>Active listening</p>
+                  <p className={styles.needItemText}>Acknowledge their feelings without judgment. Let them feel heard first.</p>
                 </div>
-              ))}
+              </div>
+              <div className={styles.needItem}>
+                <div className={styles.needNumber}>2</div>
+                <div>
+                  <p className={styles.needItemTitle}>Grounding techniques</p>
+                  <p className={styles.needItemText}>If they seem overwhelmed, try a simple breathing or grounding exercise.</p>
+                </div>
+              </div>
+              <div className={styles.needItem}>
+                <div className={styles.needNumber}>3</div>
+                <div>
+                  <p className={styles.needItemTitle}>Safe space</p>
+                  <p className={styles.needItemText}>Maintain a non-judgmental environment throughout the conversation.</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Warning */}
           <div className={styles.warningBanner}>
             <div className={styles.warningIcon}>⚠</div>
             <div>
-              <p className={styles.warningTitle}>Critical Clinical Reminder</p>
-              <p className={styles.warningText}>{BRIEF.warning}</p>
+              <p className={styles.warningTitle}>Critical Reminder</p>
+              <p className={styles.warningText}>Escalate if you detect crisis signals or self-harm ideation during the session.</p>
             </div>
-          </div>
-
-          {/* Suggested Approach */}
-          <div className={styles.approachCard}>
-            <p className={styles.approachLabel}>Suggested Approach</p>
-            <p className={styles.approachText}>{BRIEF.approach}</p>
           </div>
         </div>
       </div>
@@ -101,22 +82,89 @@ function BriefDrawer({ onClose }) {
 }
 
 export default function HelperSessionPage() {
+  const { sessionId } = useParams();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState(initialMessages);
+  const { user } = useAuth();
+
+  const [session, setSession] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [connected, setConnected] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
+
+  const wsRef = useRef(null);
   const bottomRef = useRef(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const sendMessage = (text) => {
-    if (!text.trim()) return;
-    setMessages(prev => [
-      ...prev,
-      { id: Date.now(), from: 'helper', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-    ]);
+  // Load session details + chat history
+  useEffect(() => {
+    if (!sessionId || !user?.accessToken) return;
+
+    getSession(sessionId, user.accessToken)
+      .then(s => setSession(s))
+      .catch(() => {});
+
+    getChatHistory(sessionId)
+      .then(history => {
+        setMessages(history.map(m => ({
+          id: m.id,
+          from: m.role,   // 'user' | 'helper'
+          text: m.content,
+          time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })));
+      })
+      .catch(() => {});
+  }, [sessionId, user?.accessToken]);
+
+  // WebSocket connection
+  useEffect(() => {
+    if (!sessionId) return;
+    const ws = new WebSocket(`${WS_BASE}/api/v1/websocket/chat/${sessionId}/helper`);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+    ws.onerror = () => setConnected(false);
+    ws.onmessage = (event) => {
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        from: 'user',
+        text: event.data,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    };
+
+    return () => ws.close();
+  }, [sessionId]);
+
+  const sendMessage = () => {
+    const text = input.trim();
+    if (!text) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(text);
+    }
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      from: 'helper',
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }]);
     setInput('');
   };
+
+  const handleEndSession = async () => {
+    if (ending) return;
+    setEnding(true);
+    try {
+      await closeSession(sessionId, user.accessToken);
+    } catch {}
+    wsRef.current?.close();
+    navigate('/helper/dashboard');
+  };
+
+  const isClosed = session?.status === 'closed';
 
   return (
     <AppLayout role="helper">
@@ -128,10 +176,17 @@ export default function HelperSessionPage() {
           </button>
           <div className={styles.topBar}>
             <div className={styles.sessionInfo}>
-              <div className={styles.seekerDot} />
+              <div className={styles.seekerDot} style={{ background: connected ? '#22c55e' : isClosed ? 'var(--color-text-muted)' : '#f59e0b' }} />
               <div>
-                <p className={styles.sessionTitle}>Session with Anon #4821</p>
-                <p className={styles.sessionTags}>Work Stress · Anxiety</p>
+                <p className={styles.sessionTitle}>
+                  Session with User #{session?.user_id || '…'}
+                  {connected && <span style={{ marginLeft: 8, fontSize: 10, color: '#22c55e' }}>● Live</span>}
+                  {isClosed && <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--color-text-muted)' }}>● Ended</span>}
+                </p>
+                <p className={styles.sessionTags}>
+                  {session?.helper_type === 'therapist' ? 'Therapist Request' : 'Peer Support'}
+                  {session?.acceptance_count != null && ` · ${session.acceptance_count}/3 helpers`}
+                </p>
               </div>
             </div>
             <div className={styles.topBarActions}>
@@ -146,9 +201,15 @@ export default function HelperSessionPage() {
                   <line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
-              <button className={styles.endBtn} onClick={() => navigate('/helper/dashboard')}>
-                End Session
-              </button>
+              {!isClosed && (
+                <button
+                  className={styles.endBtn}
+                  onClick={handleEndSession}
+                  disabled={ending}
+                >
+                  {ending ? 'Ending…' : 'End Session'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -156,12 +217,29 @@ export default function HelperSessionPage() {
         {/* Chat area */}
         <div className={styles.chatArea}>
           <div className={styles.dateSep}>TODAY</div>
+
+          {messages.length === 0 && !isClosed && (
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '2rem' }}>
+              {connected ? 'Connected. Waiting for the seeker…' : 'Connecting to session…'}
+            </p>
+          )}
+
+          {messages.length === 0 && isClosed && (
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '2rem' }}>
+              This session has ended.
+            </p>
+          )}
+
           {messages.map(msg => (
             <div
               key={msg.id}
               className={[styles.msgRow, msg.from === 'helper' ? styles.helperRow : styles.seekerRow].join(' ')}
             >
-              {msg.from === 'seeker' && <div className={styles.seekerAvatar}>A</div>}
+              {msg.from === 'user' && (
+                <div className={styles.seekerAvatar}>
+                  {String(session?.user_id || 'A')[0].toUpperCase()}
+                </div>
+              )}
               <div className={[styles.bubble, msg.from === 'helper' ? styles.helperBubble : styles.seekerBubble].join(' ')}>
                 <p>{msg.text}</p>
                 <span className={styles.time}>{msg.time}</span>
@@ -173,28 +251,30 @@ export default function HelperSessionPage() {
         </div>
 
         {/* Input bar */}
-        <div className={styles.inputBar}>
-          <input
-            className={styles.input}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-            placeholder="Type a supportive message..."
-          />
-          <button
-            className={[styles.sendBtn, !input.trim() ? styles.sendBtnDisabled : ''].join(' ')}
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim()}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
+        {!isClosed && (
+          <div className={styles.inputBar}>
+            <input
+              className={styles.input}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              placeholder="Type a supportive message…"
+              disabled={!connected}
+            />
+            <button
+              className={[styles.sendBtn, (!input.trim() || !connected) ? styles.sendBtnDisabled : ''].join(' ')}
+              onClick={sendMessage}
+              disabled={!input.trim() || !connected}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Brief drawer */}
-      {briefOpen && <BriefDrawer onClose={() => setBriefOpen(false)} />}
+      {briefOpen && <BriefDrawer session={session} onClose={() => setBriefOpen(false)} />}
     </AppLayout>
   );
 }

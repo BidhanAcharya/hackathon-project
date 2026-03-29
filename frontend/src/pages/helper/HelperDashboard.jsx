@@ -1,52 +1,94 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../../components/layout/AppLayout';
+import { useAuth } from '../../context/AuthContext';
+import { getOpenRequests, getHelperSessions, acceptHelpRequest } from '../../api/helpRequest';
 import styles from './HelperDashboard.module.css';
 
-const incomingRequests = [
-  {
-    id: 'r1',
-    anonId: '9921',
-    timeAgo: 'Received 2m ago',
-    urgency: 'high',
-    urgencyLabel: 'High Urgency',
-    snippet: 'Feeling overwhelmed with work stress and sudden anxiety peaks during meetings.',
-    tags: ['Work', 'Stress', 'Anxiety'],
-  },
-  {
-    id: 'r2',
-    anonId: '1042',
-    timeAgo: 'Received 14m ago',
-    urgency: 'moderate',
-    urgencyLabel: 'Moderate',
-    snippet: 'Difficulties maintaining routine sleep hygiene, feeling lethargic.',
-    tags: ['Sleep', 'Lifestyle'],
-  },
-  {
-    id: 'r3',
-    anonId: '8834',
-    timeAgo: 'Received 45m ago',
-    urgency: 'low',
-    urgencyLabel: 'Low Urgency',
-    snippet: 'Seeking general guidance on mindfulness techniques for daily focus.',
-    tags: ['Wellness', 'Focus'],
-  },
-];
-
-const activeSessions = [
-  { id: 's1', userId: '88219', initials: 'JD', duration: 'Connected for 42m', snippet: '"Thank you for the breathing exercises, I feel a bit more..."' },
-  { id: 's2', userId: '77120', initials: 'MK', duration: 'Connected for 1h 15m', snippet: '"I\'ll try to implement the schedule changes this weekend..."' },
-  { id: 's3', userId: '90014', initials: 'PL', duration: 'Connected for 5m', snippet: '"Hello, I\'m just starting to look at the resources..."' },
+const CATEGORIES = [
+  { label: 'Anxiety', icon: '🌀' },
+  { label: 'Work Stress', icon: '💼' },
+  { label: 'Relationships', icon: '❤️' },
+  { label: 'Sleep', icon: '🌙' },
+  { label: 'Grief', icon: '🕊️' },
+  { label: 'Career', icon: '🎯' },
+  { label: 'Self-esteem', icon: '🌱' },
+  { label: 'Other', icon: '💬' },
 ];
 
 export default function HelperDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [tab, setTab] = useState('requests'); // 'requests' | 'sessions'
+  const [openRequests, setOpenRequests] = useState([]);
+  const [mySessions, setMySessions] = useState([]);
+  const [accepting, setAccepting] = useState(null);
+  const [activeFilters, setActiveFilters] = useState([]); // selected category labels
+
+  const loadData = useCallback(() => {
+    if (!user?.accessToken) return;
+    getOpenRequests(user.accessToken)
+      .then(data => setOpenRequests(data))
+      .catch(() => {});
+    getHelperSessions(user.accessToken)
+      .then(data => setMySessions(data))
+      .catch(() => {});
+  }, [user?.accessToken]);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 15000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const handleAccept = async (sessionId) => {
+    if (!user?.accessToken || accepting) return;
+    setAccepting(sessionId);
+    try {
+      await acceptHelpRequest(sessionId, user.accessToken);
+      loadData(); // request disappears from open list, appears in My Sessions
+    } catch (err) {
+      alert(err.message || 'Failed to accept request.');
+    } finally {
+      setAccepting(null);
+    }
+  };
+
+  const toggleFilter = (label) => {
+    setActiveFilters(prev =>
+      prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+    );
+  };
+
+  // Apply category filter
+  const filteredRequests = activeFilters.length === 0
+    ? openRequests
+    : openRequests.filter(req =>
+        (req.categories || []).some(c => activeFilters.includes(c))
+      );
+
+  const activeSessions = mySessions.filter(s => s.status === 'active');
 
   return (
     <AppLayout role="helper">
       <div className={styles.page}>
         {/* Header */}
         <header className={styles.header}>
-          <h1 className={styles.welcomeTitle}>Welcome back, Dr. Aris</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <h1 className={styles.welcomeTitle}>Welcome back, {user?.alias || user?.username || 'Helper'}</h1>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              padding: '3px 10px',
+              borderRadius: '999px',
+              background: user?.helperRole === 'therapist' ? '#e0f4ff' : '#f0eeff',
+              color: user?.helperRole === 'therapist' ? '#0ea5e9' : '#6c63ff',
+              border: `1.5px solid ${user?.helperRole === 'therapist' ? '#bae6fd' : '#c4b5fd'}`,
+            }}>
+              {user?.helperRole === 'therapist' ? '🩺 Verified Therapist' : '🤝 Peer Supporter'}
+            </span>
+          </div>
           <p className={styles.welcomeSub}>Your clinical overview for today.</p>
         </header>
 
@@ -54,23 +96,23 @@ export default function HelperDashboard() {
         <section className={styles.statsGrid}>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Active Sessions</p>
-            <h3 className={styles.statValue}>12</h3>
+            <h3 className={styles.statValue}>{activeSessions.length}</h3>
             <div className={styles.statMeta + ' ' + styles.metaGreen}>
-              <span className={styles.trendIcon}>↑</span> 2 more than yesterday
+              <span className={styles.trendIcon}>↑</span> Live sessions
             </div>
           </div>
           <div className={styles.statCard}>
-            <p className={styles.statLabel}>Avg Rating</p>
-            <h3 className={styles.statValue}>4.9</h3>
+            <p className={styles.statLabel}>Open Requests</p>
+            <h3 className={styles.statValue}>{openRequests.length}</h3>
             <div className={styles.statMeta + ' ' + styles.metaOrange}>
-              ★ Top 5% of Helpers
+              Awaiting helpers
             </div>
           </div>
           <div className={styles.statCard}>
-            <p className={styles.statLabel}>Response Rate</p>
-            <h3 className={styles.statValue}>98%</h3>
+            <p className={styles.statLabel}>Total Accepted</p>
+            <h3 className={styles.statValue}>{mySessions.length}</h3>
             <div className={styles.statMeta + ' ' + styles.metaGreen}>
-              ✓ Exceeding target
+              ✓ All time
             </div>
           </div>
           <div className={styles.statCardOnline}>
@@ -78,90 +120,147 @@ export default function HelperDashboard() {
             <h3 className={styles.statValueLight}>Active</h3>
             <div className={styles.onlineStatus}>
               <span className={styles.onlinePulse} />
-              Visible to patients
+              Visible to seekers
             </div>
           </div>
         </section>
 
-        {/* Bento Grid */}
-        <div className={styles.bentoGrid}>
-          {/* Incoming Requests */}
-          <section className={styles.requestsSection}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Incoming Requests</h2>
-              <span className={styles.newBadge}>3 New Requests</span>
+        {/* Tabs */}
+        <div className={styles.tabs}>
+          <button
+            className={[styles.tabBtn, tab === 'requests' ? styles.tabActive : ''].join(' ')}
+            onClick={() => setTab('requests')}
+          >
+            All Requests
+            {openRequests.length > 0 && (
+              <span className={styles.tabBadge}>{openRequests.length}</span>
+            )}
+          </button>
+          <button
+            className={[styles.tabBtn, tab === 'sessions' ? styles.tabActive : ''].join(' ')}
+            onClick={() => setTab('sessions')}
+          >
+            My Sessions
+            {mySessions.length > 0 && (
+              <span className={styles.tabBadge}>{mySessions.length}</span>
+            )}
+          </button>
+        </div>
+
+        {/* ── Tab: All Requests ── */}
+        {tab === 'requests' && (
+          <div className={styles.tabContent}>
+            {/* Category Filter */}
+            <div className={styles.filterRow}>
+              <span className={styles.filterLabel}>Filter by topic:</span>
+              <div className={styles.filterChips}>
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.label}
+                    className={[
+                      styles.filterChip,
+                      activeFilters.includes(cat.label) ? styles.filterChipActive : '',
+                    ].join(' ')}
+                    onClick={() => toggleFilter(cat.label)}
+                  >
+                    {cat.icon} {cat.label}
+                  </button>
+                ))}
+                {activeFilters.length > 0 && (
+                  <button
+                    className={styles.filterClear}
+                    onClick={() => setActiveFilters([])}
+                  >
+                    Clear ✕
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Request List */}
             <div className={styles.requestList}>
-              {incomingRequests.map((req) => (
-                <div
-                  key={req.id}
-                  className={[styles.requestCard, styles[`urgency_${req.urgency}`]].join(' ')}
-                >
+              {filteredRequests.length === 0 && (
+                <p className={styles.emptyState}>
+                  {activeFilters.length > 0
+                    ? 'No requests match the selected filters.'
+                    : 'No open requests right now. Check back soon.'}
+                </p>
+              )}
+              {filteredRequests.map((req) => (
+                <div key={req.session_id} className={[styles.requestCard, styles.urgency_moderate].join(' ')}>
                   <div className={styles.requestTop}>
                     <div className={styles.requestMeta}>
-                      <span className={styles.reqAnon}>Anon #{req.anonId}</span>
-                      <span className={[styles.urgencyBadge, styles[`badge_${req.urgency}`]].join(' ')}>
+                      <span className={styles.reqAnon}>{req.seeker_alias || `Anon_${req.user_id}`}</span>
+                      <span className={[styles.urgencyBadge, styles.badge_moderate].join(' ')}>
                         <span className={styles.urgencyDot} />
-                        {req.urgencyLabel}
+                        {req.helper_type === 'therapist' ? 'Therapist Req.' : 'Peer Support'}
+                      </span>
+                      <span className={styles.slotBadge}>
+                        {req.acceptance_count}/3 helpers
                       </span>
                     </div>
                     <button
                       className={styles.viewBriefBtn}
-                      onClick={() => navigate(`/helper/request/${req.id}`)}
+                      onClick={() => handleAccept(req.session_id)}
+                      disabled={accepting === req.session_id}
                     >
-                      View Brief <span>›</span>
+                      {accepting === req.session_id ? 'Accepting…' : 'Accept ✓'}
                     </button>
                   </div>
-                  <p className={styles.reqSnippet}>{req.snippet}</p>
-                  <div className={styles.reqTags}>
-                    {req.tags.map((t) => (
-                      <span key={t} className={styles.reqTag}>{t}</span>
-                    ))}
-                  </div>
-                  <p className={styles.reqTime}>{req.timeAgo}</p>
+
+                  <p className={styles.reqSnippet}>{req.message || 'No message provided.'}</p>
+
+                  {req.categories?.length > 0 && (
+                    <div className={styles.reqTags}>
+                      {req.categories.map(c => (
+                        <span key={c} className={styles.reqTag}>{c}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className={styles.reqTime}>
+                    {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
+        )}
 
-          {/* Active Sessions */}
-          <section className={styles.sessionsSection}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Active Sessions</h2>
-              <button className={styles.viewAllLink}>View All Sessions</button>
-            </div>
+        {/* ── Tab: My Sessions ── */}
+        {tab === 'sessions' && (
+          <div className={styles.tabContent}>
             <div className={styles.sessionList}>
-              {activeSessions.map((s) => (
-                <div key={s.id} className={styles.sessionRow}>
+              {mySessions.length === 0 && (
+                <p className={styles.emptyState}>
+                  You haven't accepted any sessions yet. Go to "All Requests" to accept one.
+                </p>
+              )}
+              {mySessions.map((s) => (
+                <div key={s.session_id} className={styles.sessionRow}>
                   <div className={styles.sessionLeft}>
-                    <div className={styles.sessionAvatar}>{s.initials}</div>
+                    <div className={styles.sessionAvatar}>U</div>
                     <div>
-                      <p className={styles.sessionUserId}>User ID: #{s.userId}</p>
-                      <p className={styles.sessionDuration}>{s.duration}</p>
+                      <p className={styles.sessionUserId}>{s.seeker_alias || `Anon_${s.user_id}`}</p>
+                      <p className={styles.sessionDuration}>
+                        {s.helper_type === 'therapist' ? 'Therapist session' : 'Peer session'}
+                        {' · '}{s.acceptance_count}/3 helpers
+                      </p>
                     </div>
+                    {s.status === 'active' && <span className={styles.sessionOnlineDot} />}
                   </div>
-                  <span className={styles.sessionOnlineDot} />
-                  <div className={styles.sessionSnippet}>{s.snippet}</div>
+                  <div className={styles.sessionSnippet}>"{s.message || 'No message'}"</div>
                   <button
                     className={styles.goToChatBtn}
-                    onClick={() => navigate(`/helper/session/${s.id}`)}
+                    onClick={() => navigate(`/helper/session/${s.session_id}`)}
                   >
                     💬 Go to Chat
                   </button>
                 </div>
               ))}
             </div>
-
-            {/* Capacity Card */}
-            <div className={styles.capacityCard}>
-              <h4 className={styles.capacityTitle}>Capacity Update</h4>
-              <p className={styles.capacityText}>
-                You've handled 24 requests today. Taking a 5-minute breather can improve your response quality.
-              </p>
-              <button className={styles.capacityBtn}>Set Break Timer</button>
-            </div>
-          </section>
-        </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, getMe } from '../api/auth';
+import { loginUser, registerUser, getMe, loginHelper, registerHelper, getHelperMe } from '../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -22,13 +22,20 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const saved = loadFromStorage();
     if (saved?.accessToken) {
-      getMe(saved.accessToken)
+      const fetchMe = saved.role === 'helper'
+        ? getHelperMe(saved.accessToken)
+        : getMe(saved.accessToken);
+
+      fetchMe
         .then(data => {
           setUser({
             username: data.username,
             email: data.email,
             role: saved.role,
             anonId: saved.anonId,
+            alias: data.alias || saved.alias,
+            helperRole: data.role || saved.helperRole,   // "peer" or "therapist" for helpers
+            userId: data.user_id ?? data.helper_id,
             name: data.username,
             accessToken: saved.accessToken,
             refreshToken: saved.refreshToken,
@@ -47,13 +54,15 @@ export function AuthProvider({ children }) {
       refreshToken: userData.refreshToken,
       role: userData.role,
       anonId: userData.anonId,
+      alias: userData.alias,
+      helperRole: userData.helperRole,
     }));
     setUser(userData);
   }
 
   // ── Seeker ──────────────────────────────────────────────
-  async function signupAsSeeker({ username, email, password }) {
-    await registerUser({ username, email, password });
+  async function signupAsSeeker({ username, email, password, alias }) {
+    await registerUser({ username, email, password, alias });
     await loginAsSeeker({ email, password });
   }
 
@@ -66,26 +75,33 @@ export function AuthProvider({ children }) {
       email: me.email,
       name: me.username,
       role: 'seeker',
+      userId: me.user_id,
       anonId,
+      alias: me.alias,
+      helperRole: null,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
     });
   }
 
-  // ── Helper (shares User endpoints; role stored client-side) ──
-  async function signupAsHelper({ username, email, password }) {
-    await registerUser({ username, email, password });
+  // ── Helper ──────────────────────────────────────────────
+  async function signupAsHelper({ username, email, password, role, proof_id, alias }) {
+    await registerHelper({ username, email, password, domain_expertise: 'general', role, proof_id, alias });
     await loginAsHelper({ email, password });
   }
 
   async function loginAsHelper({ email, password }) {
-    const tokens = await loginUser({ email, password });
-    const me = await getMe(tokens.access_token);
+    const tokens = await loginHelper({ email, password });
+    const me = await getHelperMe(tokens.access_token);
     _persist({
       username: me.username,
       email: me.email,
       name: me.username,
       role: 'helper',
+      userId: me.helper_id,
+      anonId: null,
+      alias: me.alias,
+      helperRole: me.role || 'peer',
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
     });

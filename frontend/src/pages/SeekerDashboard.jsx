@@ -1,32 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
+import { getUserSessions } from '../api/helpRequest';
 import styles from './SeekerDashboard.module.css';
-
-const acceptedHelpers = [
-  {
-    id: 1,
-    name: 'Dr. Priya Sharma',
-    expertise: 'Anxiety & Depression',
-    experience: '9 years',
-    hasMessage: false,
-  },
-  {
-    id: 2,
-    name: 'Rahul Mehta',
-    expertise: 'Relationship Counseling',
-    experience: '6 years',
-    hasMessage: true,
-  },
-  {
-    id: 3,
-    name: 'Dr. Nadia Kapoor',
-    expertise: 'Stress & Burnout',
-    experience: '11 years',
-    hasMessage: false,
-  },
-];
 
 function TalkToAICard({ onStart }) {
   return (
@@ -110,6 +88,17 @@ function StreakCard() {
 export default function SeekerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [allSessions, setAllSessions] = useState([]);
+
+  useEffect(() => {
+    if (!user?.accessToken) return;
+    getUserSessions(user.accessToken)
+      .then(sessions => setAllSessions(sessions.filter(s => s.status !== 'closed')))
+      .catch(() => {});
+  }, [user?.accessToken]);
+
+  const activeSessions = allSessions.filter(s => s.status === 'active');
+  const pendingSessions = allSessions.filter(s => s.status === 'pending');
 
   return (
     <AppLayout role="seeker" anonId={user?.anonId}>
@@ -125,17 +114,36 @@ export default function SeekerDashboard() {
 
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Your Accepted Helpers</h2>
+              <h2 className={styles.sectionTitle}>Your Sessions</h2>
               <button className={styles.viewAll} onClick={() => navigate('/professional-support')}>
                 View All →
               </button>
             </div>
             <div className={styles.helperList}>
-              {acceptedHelpers.map(h => (
+              {allSessions.length === 0 && (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                  No sessions yet. <button className={styles.viewAll} onClick={() => navigate('/professional-support')}>Request support →</button>
+                </p>
+              )}
+              {pendingSessions.map(s => (
+                <div key={s.session_id} style={{ padding: '0.75rem', background: 'var(--color-surface)', borderRadius: '8px', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                  ⏳ Waiting for helpers… ({s.acceptance_count || 0}/3 accepted)
+                  <span style={{ marginLeft: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>"{(s.message || '').slice(0, 60)}{s.message?.length > 60 ? '…' : ''}"</span>
+                </div>
+              ))}
+              {activeSessions.map(s => (
                 <HelperCard
-                  key={h.id}
-                  helper={h}
-                  onAction={(id) => navigate(`/session/${id}`)}
+                  key={s.session_id}
+                  helper={{
+                    id: s.session_id,
+                    name: s.helper?.helper_id
+                      ? `Helper #${s.helper.helper_id}`
+                      : `${s.acceptance_count || 1} Helper${(s.acceptance_count || 1) > 1 ? 's' : ''}`,
+                    expertise: s.helper?.domain_expertise || 'General',
+                    experience: s.helper_type === 'therapist' ? 'Verified Therapist' : 'Peer Supporter',
+                    hasMessage: true,
+                  }}
+                  onAction={() => navigate(`/session/${s.session_id}`)}
                 />
               ))}
             </div>

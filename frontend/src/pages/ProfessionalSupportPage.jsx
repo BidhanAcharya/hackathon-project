@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
+import { createHelpRequest, getUserSessions, deleteHelpRequest } from '../api/helpRequest';
 import styles from './ProfessionalSupportPage.module.css';
 
 const CATEGORIES = [
@@ -16,26 +17,38 @@ const CATEGORIES = [
   { label: 'Other', icon: '💬' },
 ];
 
-const MOCK_RESPONSES = [
-  {
-    id: 'resp1',
-    initials: 'DA',
-    name: 'Dr. Aris',
-    role: 'Verified Therapist',
-    time: '2m ago',
-    message: "I understand how overwhelming this can feel. I'm available right now — happy to chat or jump straight into a session.",
-    sessionId: 's-aris',
-  },
-  {
-    id: 'resp2',
-    initials: 'MK',
-    name: 'Peer Helper',
-    role: 'Peer Supporter',
-    time: '5m ago',
-    message: "I've been through something similar. Happy to share what helped me or just listen — whatever feels right for you.",
-    sessionId: 's-mk',
-  },
-];
+function timeAgo(isoString) {
+  const diff = Math.floor((Date.now() - new Date(isoString)) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function sessionToRequest(s) {
+  const acceptedHelpers = s.accepted_helpers || (s.helper ? [s.helper] : []);
+  return {
+    id: s.session_id,
+    helperType: s.helper_type || 'peer',
+    message: s.message || '',
+    categories: s.categories || [],
+    time: timeAgo(s.created_at),
+    status: s.status,
+    waiting: s.status === 'pending' && acceptedHelpers.length === 0,
+    acceptanceCount: s.acceptance_count || acceptedHelpers.length,
+    canDelete: s.status === 'closed',
+    responses: acceptedHelpers.map(h => ({
+      id: `${s.session_id}-${h.helper_id}`,
+      initials: (h.alias || `H${h.helper_id}`).slice(0, 2).toUpperCase(),
+      name: h.alias || `Helper #${h.helper_id}`,
+      role: (h.role === 'therapist' || s.helper_type === 'therapist') ? 'Verified Therapist' : 'Peer Supporter',
+      expertise: h.domain_expertise || '',
+      time: timeAgo(s.created_at),
+      message: 'Ready to help. Click to open your session.',
+      sessionId: s.session_id,
+    })),
+  };
+}
 
 function ResponseCard({ resp, onSession }) {
   return (
@@ -56,8 +69,21 @@ function ResponseCard({ resp, onSession }) {
   );
 }
 
-function RequestItem({ req, onSession }) {
+function RequestItem({ req, onSession, onDelete }) {
   const [expanded, setExpanded] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this request? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await onDelete(req.id);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className={styles.requestItem}>
       <div className={styles.requestItemHeader} onClick={() => setExpanded(p => !p)}>
@@ -74,7 +100,25 @@ function RequestItem({ req, onSession }) {
         </div>
         <div className={styles.requestItemRight}>
           <span className={styles.requestItemTime}>{req.time}</span>
-          <span className={styles.responsesCount}>{req.responses.length} response{req.responses.length !== 1 ? 's' : ''}</span>
+          {req.status === 'closed' ? (
+            <span className={styles.responsesCount} style={{ color: '#22c55e' }}>✓ Completed</span>
+          ) : (
+            <span className={styles.responsesCount}>
+              {req.waiting
+                ? '⏳ Waiting for helpers…'
+                : `${req.acceptanceCount}/3 helper${req.acceptanceCount !== 1 ? 's' : ''} ready`}
+            </span>
+          )}
+          {req.canDelete && (
+            <button
+              className={styles.deleteBtn}
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Delete this completed request"
+            >
+              {deleting ? '…' : '🗑'}
+            </button>
+          )}
           <span className={styles.chevron}>{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
@@ -85,7 +129,9 @@ function RequestItem({ req, onSession }) {
             <ResponseCard key={resp.id} resp={resp} onSession={onSession} />
           ))}
           {req.responses.length === 0 && (
-            <p className={styles.waitingText}>⏳ Waiting for helpers to respond...</p>
+            <p className={styles.waitingText}>
+              ⏳ Waiting for helpers to accept your request. Up to 3 helpers can join.
+            </p>
           )}
         </div>
       )}
@@ -93,7 +139,7 @@ function RequestItem({ req, onSession }) {
   );
 }
 
-function ComposeForm({ onSend, isDrawer }) {
+function ComposeForm({ onSend, isDrawer, submitting, error }) {
   const [helperType, setHelperType] = useState('peer');
   const [message, setMessage] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -103,9 +149,14 @@ function ComposeForm({ onSend, isDrawer }) {
       prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label]
     );
 
-  const handleSend = () => {
-    if (!message.trim()) return;
-    onSend({ helperType, message, categories: selectedCategories });
+  const handleSend = async () => {
+    if (!message.trim() || submitting) return;
+    const success = await onSend({ helperType, message, categories: selectedCategories });
+    if (success) {
+      setMessage('');
+      setSelectedCategories([]);
+      setHelperType('peer');
+    }
   };
 
   return (
@@ -127,10 +178,16 @@ function ComposeForm({ onSend, isDrawer }) {
           <span className={styles.stepNum}>1</span> Who would you like to talk to?
         </div>
         <div className={styles.toggle}>
-          <button className={[styles.toggleBtn, helperType === 'peer' ? styles.toggleActive : ''].join(' ')} onClick={() => setHelperType('peer')}>
+          <button
+            className={[styles.toggleBtn, helperType === 'peer' ? styles.toggleActive : ''].join(' ')}
+            onClick={() => setHelperType('peer')}
+          >
             🤝 Peer Supporter
           </button>
-          <button className={[styles.toggleBtn, helperType === 'therapist' ? styles.toggleActive : ''].join(' ')} onClick={() => setHelperType('therapist')}>
+          <button
+            className={[styles.toggleBtn, helperType === 'therapist' ? styles.toggleActive : ''].join(' ')}
+            onClick={() => setHelperType('therapist')}
+          >
             🩺 Verified Therapist
           </button>
         </div>
@@ -171,12 +228,13 @@ function ComposeForm({ onSend, isDrawer }) {
         <span className={styles.charCount}>{message.length} / 500</span>
       </div>
 
+      {error && <p className={styles.error}>{error}</p>}
       <button
-        className={[styles.sendBtn, !message.trim() ? styles.sendBtnDisabled : ''].join(' ')}
+        className={[styles.sendBtn, (!message.trim() || submitting) ? styles.sendBtnDisabled : ''].join(' ')}
         onClick={handleSend}
-        disabled={!message.trim()}
+        disabled={!message.trim() || submitting}
       >
-        Send to Helpers ▶
+        {submitting ? 'Sending…' : 'Send to Helpers ▶'}
       </button>
       <div className={styles.responseTime}>⚡ AVERAGE RESPONSE TIME: UNDER 10 MINUTES</div>
     </div>
@@ -187,23 +245,71 @@ export default function ProfessionalSupportPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const isFirstTime = requests.length === 0;
+  // Load existing sessions on mount and periodically refresh
+  const loadSessions = () => {
+    if (!user?.accessToken) return;
+    getUserSessions(user.accessToken)
+      .then(sessions => {
+        setRequests(sessions.map(sessionToRequest));
+        setLoadingRequests(false);
+      })
+      .catch(() => setLoadingRequests(false));
+  };
 
-  const handleSend = ({ helperType, message, categories }) => {
-    setRequests(prev => [{
-      id: `req-${Date.now()}`,
-      helperType,
-      message,
-      categories,
-      time: 'just now',
-      responses: MOCK_RESPONSES,
-    }, ...prev]);
-    setDrawerOpen(false);
+  useEffect(() => {
+    loadSessions();
+    // Poll every 15 seconds to catch helper assignments
+    const interval = setInterval(loadSessions, 15000);
+    return () => clearInterval(interval);
+  }, [user?.accessToken]);
+
+  const isFirstTime = !loadingRequests && requests.length === 0;
+
+  // Returns true on success so ComposeForm can reset itself
+  const handleSend = async ({ helperType, message, categories }) => {
+    if (!user?.accessToken) return false;
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await createHelpRequest({ message, helperType, categories, accessToken: user.accessToken });
+      const newReq = {
+        id: result.session_id,
+        helperType: result.helper_type || helperType,
+        message: result.message || message,
+        categories: result.categories || categories,
+        time: 'just now',
+        status: 'pending',
+        waiting: true,
+        acceptanceCount: 0,
+        responses: [],
+      };
+      setRequests(prev => [newReq, ...prev]);
+      setDrawerOpen(false);
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to send request. Please try again.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSession = (sessionId) => navigate(`/session/${sessionId}`);
+
+  const handleDelete = async (sessionId) => {
+    if (!user?.accessToken) return;
+    try {
+      await deleteHelpRequest(sessionId, user.accessToken);
+      setRequests(prev => prev.filter(r => r.id !== sessionId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete request.');
+    }
+  };
 
   return (
     <AppLayout role="seeker" anonId={user?.anonId}>
@@ -211,10 +317,12 @@ export default function ProfessionalSupportPage() {
 
       <div className={styles.page}>
 
-        {isFirstTime ? (
+        {loadingRequests ? (
+          <div style={{ padding: '2rem', color: 'var(--color-text-muted)' }}>Loading...</div>
+        ) : isFirstTime ? (
           /* ── First time: show form inline ── */
           <div className={styles.firstTimeLayout}>
-            <ComposeForm onSend={handleSend} isDrawer={false} />
+            <ComposeForm onSend={handleSend} isDrawer={false} submitting={submitting} error={error} />
             <div className={styles.trustSidebar}>
               <p className={styles.previewLabel}>WHY IT'S SAFE</p>
               <div className={styles.trustCard}>
@@ -246,7 +354,7 @@ export default function ProfessionalSupportPage() {
 
             <div className={styles.requestList}>
               {requests.map(req => (
-                <RequestItem key={req.id} req={req} onSession={handleSession} />
+                <RequestItem key={req.id} req={req} onSession={handleSession} onDelete={handleDelete} />
               ))}
             </div>
           </>
@@ -266,7 +374,7 @@ export default function ProfessionalSupportPage() {
               <button className={styles.drawerClose} onClick={() => setDrawerOpen(false)}>✕</button>
             </div>
             <div className={styles.drawerBody}>
-              <ComposeForm onSend={handleSend} isDrawer />
+              <ComposeForm onSend={handleSend} isDrawer submitting={submitting} error={error} />
             </div>
           </div>
         </>

@@ -11,6 +11,7 @@ function SignupForm({ onSwitch }) {
     email: '',
     password: '',
     confirmPassword: '',
+    alias: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,12 @@ function SignupForm({ onSwitch }) {
     submitting.current = true;
     setLoading(true);
     try {
-      await signupAsSeeker({ username: form.fullName, email: form.email, password: form.password });
+      await signupAsSeeker({
+        username: form.fullName,
+        email: form.email,
+        password: form.password,
+        alias: form.alias.trim() || undefined,
+      });
       navigate('/onboarding');
     } catch (err) {
       setError(err.message || 'Sign up failed. Please try again.');
@@ -107,6 +113,23 @@ function SignupForm({ onSwitch }) {
             onChange={handleChange}
             autoComplete="new-password"
           />
+        </div>
+
+        <div className={styles.field}>
+          <label className={styles.label}>
+            Anonymous Alias <span style={{ color: '#aaa', fontWeight: 400 }}>(optional)</span>
+          </label>
+          <input
+            className={styles.input}
+            type="text"
+            name="alias"
+            placeholder="e.g. StarGazer · leave blank for random"
+            value={form.alias}
+            onChange={handleChange}
+          />
+          <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
+            Helpers will see this name instead of your real name. Leave blank for a random one.
+          </p>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
