@@ -14,10 +14,10 @@ function TrustPillar({ icon, title, description }) {
   );
 }
 
-function CommunityCard({ title, description }) {
+function CommunityCard({ title, description, image }) {
   return (
     <div className={styles.communityCard}>
-      <div className={styles.communityCardImg} />
+      <div className={styles.communityCardImg}><img src={image} alt={title}/></div>
       <h4 className={styles.communityCardTitle}>{title}</h4>
       <p className={styles.communityCardDesc}>{description}</p>
     </div>
@@ -49,7 +49,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <p className={styles.heroEyebrow}>MENTAL WIZARD · MENTAL HEALTH SUPPORT</p>
+          <p className={styles.heroEyebrow}>Gunaso</p>
           <h1 className={styles.heroHeadline}>A safe space to breathe.</h1>
           <p className={styles.heroSubText}>मन की बात, बेझिझक।</p>
           <p className={styles.heroBody}>
@@ -67,8 +67,18 @@ export default function LandingPage() {
         </div>
         <div className={styles.heroImage}>
           <div className={styles.heroImagePlaceholder} >
-            <img src="/images/a.jpg" alt="Hero" />
+            <img src="/images/e.jpg" alt="Hero" />
           </div>
+        </div>
+      </section>
+
+       {/* Community Choice */}
+       <section className={styles.community} id="community">
+        <h2 className={styles.sectionTitle}>Community Choice</h2>
+        <div className={styles.communityGrid}>
+          <CommunityCard title="Anonymous Peer Support" description="Talk to someone who truly understands what you're going through." image="/images/b.jpg"  />
+          <CommunityCard title="Licensed Therapists" description="Professional care from verified clinical psychologists." image="/images/c.jpg"/>
+          <CommunityCard title="AI Companion" description="Available 24/7 — your first step toward feeling better." image="/images/d.jpg"/>
         </div>
       </section>
 
@@ -103,20 +113,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Community Choice */}
-      <section className={styles.community} id="community">
-        <h2 className={styles.sectionTitle}>Community Choice</h2>
-        <div className={styles.communityGrid}>
-          <CommunityCard title="Anonymous Peer Support" description="Talk to someone who truly understands what you're going through." />
-          <CommunityCard title="Licensed Therapists" description="Professional care from verified clinical psychologists." />
-          <CommunityCard title="AI Companion" description="Available 24/7 — your first step toward feeling better." />
-        </div>
-      </section>
+     
 
       {/* CTA Banner */}
       <section className={styles.ctaBanner}>
         <h2 className={styles.ctaTitle}>Ready to take a breath?</h2>
-        <p className={styles.ctaSubtitle}>Join thousands finding peace of mind through Mental Wizard.</p>
+        <p className={styles.ctaSubtitle}>Join thousands finding peace of mind through Gunaso.</p>
         <div className={styles.ctaBtns}>
           <button className={styles.ctaBannerBtn} onClick={() => navigate('/signup')}>I need support →</button>
           <button className={styles.ctaBannerGhost} onClick={handleHelperClick}>I want to help others</button>
@@ -127,14 +129,14 @@ export default function LandingPage() {
       <footer className={styles.footer}>
         <div className={styles.footerLogo}>
           <span className={styles.logoIcon}>+</span>
-          <span className={styles.footerLogoName}>Mental Wizard</span>
+          <span className={styles.footerLogoName}>Gunaso</span>
         </div>
         <div className={styles.footerLinks}>
           <a href="#">Privacy</a>
           <a href="#">Terms</a>
           <a href="#">Contact</a>
         </div>
-        <p className={styles.footerCopy}>© 2026 Mental Wizard. All rights reserved.</p>
+        <p className={styles.footerCopy}>© 2026 Gunaso. All rights reserved.</p>
       </footer>
     </div>
   );

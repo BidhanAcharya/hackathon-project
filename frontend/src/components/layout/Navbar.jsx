@@ -7,7 +7,7 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <button className={styles.logo} onClick={() => navigate('/')}>
         <span className={styles.logoIcon}>+</span>
-        <span className={styles.logoName}>Mental Wizard</span>
+        <span className={styles.logoName}>Gunaso</span>
       </button>
       <div className={styles.ctaGroup}>
         <button className={styles.emergencyBtn} onClick={() => navigate('/emergency')}>

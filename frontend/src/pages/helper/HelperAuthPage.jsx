@@ -213,7 +213,7 @@ export default function HelperAuthPage() {
       <div className={styles.blobBottom} />
 
       <header className={styles.header}>
-        <span className={styles.logo} onClick={() => navigate('/')}>Mental Wizard · Helpers</span>
+        <span className={styles.logo} onClick={() => navigate('/')}>Gunaso · Helpers</span>
         <button className={styles.closeBtn} onClick={() => navigate('/')}>✕</button>
       </header>
 

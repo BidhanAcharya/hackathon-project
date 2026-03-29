@@ -164,7 +164,7 @@ export default function AIChatPage() {
           <div className={styles.chatHeaderLeft}>
             <div className={styles.aiAvatarLg}>🧠</div>
             <div>
-              <p className={styles.aiName}>Mental Wizard AI</p>
+              <p className={styles.aiName}>Gunaso AI</p>
               <p className={styles.aiStatus}>
                 <span className={styles.statusDot} />
                 Always here for you
@@ -247,7 +247,7 @@ export default function AIChatPage() {
             </button>
           </div>
           <p className={styles.disclaimer}>
-            Mental Wizard AI provides emotional support — not clinical advice. In a crisis, call a helpline.
+            Gunaso AI provides emotional support — not clinical advice. In a crisis, call a helpline.
           </p>
         </div>
 
