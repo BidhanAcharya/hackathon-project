@@ -1,4 +1,5 @@
 # Gunaso — Mental Health Support Platform
+Now live at : https://gunaso-app.netlify.app/
 
 > *Connecting those who seek support with those who can provide it*
 
