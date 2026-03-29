@@ -49,9 +49,9 @@ export default function LandingPage() {
       {/* Hero */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <p className={styles.heroEyebrow}>Gunaso · MENTAL HEALTH SUPPORT</p>
-          <h1 className={styles.heroHeadline}>A safe space to breathe.</h1>
-          <p className={styles.heroSubText}>मन की बात, बेझिझक।</p>
+          <p className={styles.heroEyebrow}>Gunaso</p>
+          <h2 className={styles.heroHeadline}>तपाईंको गुनासो, हाम्रो सल्लाह</h2>
+          <p className={styles.heroSubText}>A safe space to breathe.</p>
           <p className={styles.heroBody}>
             Connect anonymously with peer supporters and verified therapists.
             Your identity is always protected.
