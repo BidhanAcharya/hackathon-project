@@ -54,6 +54,7 @@
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: -0.02em;
+  cursor: pointer;
 }
 .closeBtn {
   width: 36px;

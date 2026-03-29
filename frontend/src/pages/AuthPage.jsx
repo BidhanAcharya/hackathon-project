@@ -231,7 +231,7 @@ export default function AuthPage() {
       <div className={styles.blobBottom} />
 
       <header className={styles.header}>
-        <span className={styles.logo}>Mental Wizard</span>
+        <span className={styles.logo} onClick={() => navigate('/')}>Mental Wizard</span>
         <button className={styles.closeBtn} onClick={() => navigate('/')}>✕</button>
       </header>
 
