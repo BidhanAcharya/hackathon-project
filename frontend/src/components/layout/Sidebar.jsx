@@ -83,7 +83,7 @@ export default function Sidebar({ role = 'seeker', anonId = '4821' }) {
       <div className={styles.logo}>
         <span className={styles.logoIcon}>+</span>
         <div>
-          <div className={styles.logoName}>Mental Wizard</div>
+          <div className={styles.logoName}>Gunaso</div>
           <div className={styles.logoSub}>MENTAL HEALTH SUPPORT</div>
         </div>
       </div>

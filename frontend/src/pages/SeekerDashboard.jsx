@@ -1,32 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
+import { getMyRequests } from '../api/endpoints';
 import styles from './SeekerDashboard.module.css';
-
-const acceptedHelpers = [
-  {
-    id: 1,
-    name: 'Dr. Priya Sharma',
-    expertise: 'Anxiety & Depression',
-    experience: '9 years',
-    hasMessage: false,
-  },
-  {
-    id: 2,
-    name: 'Rahul Mehta',
-    expertise: 'Relationship Counseling',
-    experience: '6 years',
-    hasMessage: true,
-  },
-  {
-    id: 3,
-    name: 'Dr. Nadia Kapoor',
-    expertise: 'Stress & Burnout',
-    experience: '11 years',
-    hasMessage: false,
-  },
-];
 
 function TalkToAICard({ onStart }) {
   return (
@@ -35,7 +13,7 @@ function TalkToAICard({ onStart }) {
       <div className={styles.aiCardBody}>
         <h3 className={styles.aiCardTitle}>Talk to AI</h3>
         <p className={styles.aiCardDesc}>
-          Our clinically-trained AI is ready to listen and guide you through your thoughts in a safe space.
+          Your personal AI companion — context-aware and tailored to your specific situation, ready to listen and guide you through what you're facing right now.
         </p>
       </div>
       <button className={styles.aiCardBtn} onClick={onStart}>START CONVERSATION</button>
@@ -43,21 +21,39 @@ function TalkToAICard({ onStart }) {
   );
 }
 
-function HelperCard({ helper, onAction }) {
+const STATUS_CONFIG = {
+  pending: { label: 'Pending', color: '#f59e0b', dot: '⏳' },
+  active: { label: 'Active — Ready to Chat', color: '#22c55e', dot: '✅' },
+  closed: { label: 'Closed', color: '#6b7280', dot: '✓' },
+};
+
+function RequestCard({ req, onAction }) {
+  const prefs = req.preferences || {};
+  const status = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
   return (
     <div className={styles.helperCard}>
       <div className={styles.helperCardAvatar} />
       <div className={styles.helperCardInfo}>
-        <p className={styles.helperCardName}>{helper.name}</p>
-        <p className={styles.helperCardExpertise}>{helper.expertise}</p>
-        <p className={styles.helperCardExp}>{helper.experience} experience</p>
+        <p className={styles.helperCardName}>
+          {prefs.helper_type === 'therapist' ? '🩺 Therapist' : '🤝 Peer Supporter'}
+        </p>
+        <p className={styles.helperCardExpertise}>
+          {(prefs.categories || []).join(', ') || 'General'}
+        </p>
+        <p className={styles.helperCardExp} style={{ color: status.color }}>
+          {status.dot} {status.label}
+        </p>
       </div>
-      <button
-        className={helper.hasMessage ? styles.helperCardBtnContinue : styles.helperCardBtnStart}
-        onClick={() => onAction(helper.id)}
-      >
-        {helper.hasMessage ? 'Continue' : 'Start Session'}
-      </button>
+      {req.status === 'active' && (
+        <button className={styles.helperCardBtnContinue} onClick={() => onAction(req.session_id)}>
+          Continue
+        </button>
+      )}
+      {req.status === 'pending' && (
+        <button className={styles.helperCardBtnStart} disabled style={{ opacity: 0.5 }}>
+          Waiting...
+        </button>
+      )}
     </div>
   );
 }
@@ -110,6 +106,13 @@ function StreakCard() {
 export default function SeekerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [myRequests, setMyRequests] = useState([]);
+
+  useEffect(() => {
+    getMyRequests()
+      .then(data => setMyRequests(Array.isArray(data) ? data : []))
+      .catch(err => console.error('Failed to load requests:', err));
+  }, []);
 
   return (
     <AppLayout role="seeker" anonId={user?.anonId}>
@@ -117,7 +120,7 @@ export default function SeekerDashboard() {
       <div className={styles.content}>
         <div className={styles.left}>
           <div className={styles.greeting}>
-            <h1 className={styles.greetingTitle}>Welcome back, <span className={styles.greetingAnon}>Anon #{user?.anonId ?? '4821'}</span></h1>
+            <h1 className={styles.greetingTitle}>Welcome back, <span className={styles.greetingAnon}>{user?.username || 'Friend'}</span></h1>
             <p className={styles.greetingSubtitle}>Your journey to mental clarity continues. How are you feeling today?</p>
           </div>
 
@@ -125,19 +128,25 @@ export default function SeekerDashboard() {
 
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Your Accepted Helpers</h2>
+              <h2 className={styles.sectionTitle}>Your Help Requests</h2>
               <button className={styles.viewAll} onClick={() => navigate('/professional-support')}>
                 View All →
               </button>
             </div>
             <div className={styles.helperList}>
-              {acceptedHelpers.map(h => (
-                <HelperCard
-                  key={h.id}
-                  helper={h}
-                  onAction={(id) => navigate(`/session/${id}`)}
-                />
-              ))}
+              {myRequests.length === 0 ? (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                  No requests yet. <button style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate('/professional-support')}>Get professional support →</button>
+                </p>
+              ) : (
+                myRequests.slice(0, 3).map(req => (
+                  <RequestCard
+                    key={req.session_id}
+                    req={req}
+                    onAction={(sessionId) => navigate(`/session/${sessionId}`)}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

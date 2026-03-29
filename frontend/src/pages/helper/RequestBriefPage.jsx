@@ -26,8 +26,10 @@ export default function RequestBriefPage() {
   }, [requestId]);
 
   const assessment = sessionData?.initial_assessment;
+  const prefs = sessionData?.preferences || {};
   const userId = sessionData?.user_id;
   const tags = assessment?.tags || assessment?.areas_of_concern || [];
+  const categories = prefs.categories || [];
 
   const handleOpenSession = async () => {
     try {
@@ -63,6 +65,8 @@ export default function RequestBriefPage() {
             <div className={styles.tagRow}>
               {tags.length > 0 ? tags.map((tag, i) => (
                 <span className={styles.tag} key={i}>{tag}</span>
+              )) : categories.length > 0 ? categories.map((c, i) => (
+                <span className={styles.tag} key={i}>{c}</span>
               )) : <span className={styles.tag}>General</span>}
             </div>
           </div>
@@ -78,6 +82,24 @@ export default function RequestBriefPage() {
                   {assessment?.summary || assessment?.description || 'No assessment available yet.'}
                 </p>
               </div>
+
+              {/* User's own request */}
+              {prefs.message && (
+                <div className={styles.summaryCard}>
+                  <p className={styles.cardLabel}>User's Request</p>
+                  <p className={styles.summaryQuote} style={{ fontStyle: 'italic' }}>"{prefs.message}"</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', alignItems: 'center' }}>
+                    {prefs.helper_type && (
+                      <span style={{ fontSize: '0.78rem', background: 'var(--color-surface-alt, #f3f4f6)', borderRadius: '12px', padding: '3px 10px', color: 'var(--color-text-muted)' }}>
+                        {prefs.helper_type === 'therapist' ? '🩺 Requested Therapist' : '🤝 Requested Peer Supporter'}
+                      </span>
+                    )}
+                    {categories.map(c => (
+                      <span key={c} style={{ fontSize: '0.78rem', background: 'var(--color-surface-alt, #f3f4f6)', borderRadius: '12px', padding: '3px 10px', color: 'var(--color-text-muted)' }}>{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* What this person needs */}
               <div className={styles.needsCard}>

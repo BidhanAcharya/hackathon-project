@@ -6,8 +6,10 @@ import styles from './HelperSessionPage.module.css';
 
 function BriefDrawer({ sessionData, onClose }) {
   const assessment = sessionData?.initial_assessment;
+  const prefs = sessionData?.preferences || {};
   const userId = sessionData?.user_id;
   const tags = assessment?.tags || assessment?.areas_of_concern || [];
+  const categories = prefs.categories || [];
 
   return (
     <>
@@ -23,14 +25,28 @@ function BriefDrawer({ sessionData, onClose }) {
             <div className={styles.drawerTags}>
               {tags.length > 0 ? tags.map((t, i) => (
                 <span key={i} className={styles.tag}>{t}</span>
+              )) : categories.length > 0 ? categories.map((c, i) => (
+                <span key={i} className={styles.tag}>{c}</span>
               )) : <span className={styles.tag}>General</span>}
             </div>
           </div>
           <button className={styles.drawerClose} onClick={onClose}>✕</button>
         </div>
         <div className={styles.drawerBody}>
+          {/* User's own request message */}
+          {prefs.message && (
+            <div className={styles.briefSection}>
+              <p className={styles.sectionLabel}>User's Request</p>
+              <p className={styles.summaryQuote} style={{ fontStyle: 'italic' }}>"{prefs.message}"</p>
+              {prefs.helper_type && (
+                <p style={{ marginTop: '6px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  Requested: {prefs.helper_type === 'therapist' ? '🩺 Verified Therapist' : '🤝 Peer Supporter'}
+                </p>
+              )}
+            </div>
+          )}
           <div className={styles.briefSection}>
-            <p className={styles.sectionLabel}>Patient Summary</p>
+            <p className={styles.sectionLabel}>AI Assessment Summary</p>
             <p className={styles.summaryQuote}>{assessment?.summary || assessment?.description || 'No assessment available.'}</p>
           </div>
           <div className={styles.warningBanner}>

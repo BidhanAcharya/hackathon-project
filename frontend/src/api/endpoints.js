@@ -193,13 +193,23 @@ export async function analyzeConversation(conversation) {
 /**
  * Request help from a professional
  * POST /api/v1/request
- * Body: { domain, user_id }
+ * Body: { domain, user_id, preferences }
  */
-export async function requestHelp(domain, userId) {
+export async function requestHelp(domain, userId, preferences = null) {
   const response = await apiClient.post('/api/v1/request', {
     domain,
     user_id: userId,
+    preferences,
   });
+  return response.data;
+}
+
+/**
+ * Get all help requests for the current user
+ * GET /api/v1/my-requests
+ */
+export async function getMyRequests() {
+  const response = await apiClient.get('/api/v1/my-requests');
   return response.data;
 }
 

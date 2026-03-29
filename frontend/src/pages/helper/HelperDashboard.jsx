@@ -99,7 +99,9 @@ export default function HelperDashboard() {
               ) : pendingRequests.length === 0 ? (
                 <p style={{ color: 'var(--color-text-muted)', padding: '16px' }}>No pending requests at the moment.</p>
               ) : (
-                pendingRequests.map((req) => (
+                pendingRequests.map((req) => {
+                  const prefs = req.preferences || {};
+                  return (
                 <div
                   key={req.session_id}
                   className={[styles.requestCard, styles.urgency_moderate].join(' ')}
@@ -109,7 +111,7 @@ export default function HelperDashboard() {
                       <span className={styles.reqAnon}>User #{req.user_id}</span>
                       <span className={[styles.urgencyBadge, styles.badge_moderate].join(' ')}>
                         <span className={styles.urgencyDot} />
-                        Pending
+                        {prefs.helper_type === 'therapist' ? '🩺 Therapist Req.' : '🤝 Peer Req.'}
                       </span>
                     </div>
                     <button
@@ -119,12 +121,22 @@ export default function HelperDashboard() {
                       View Brief <span>›</span>
                     </button>
                   </div>
-                  <p className={styles.reqSnippet}>Session ID: {req.session_id}</p>
+                  {prefs.categories && prefs.categories.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '6px 0' }}>
+                      {prefs.categories.map(c => (
+                        <span key={c} style={{ fontSize: '0.72rem', background: 'var(--color-surface-alt, #f3f4f6)', borderRadius: '12px', padding: '2px 10px', color: 'var(--color-text-muted)' }}>{c}</span>
+                      ))}
+                    </div>
+                  )}
+                  {prefs.message && (
+                    <p className={styles.reqSnippet}>"{prefs.message}"</p>
+                  )}
                   <p className={styles.reqTime}>
                     {new Date(req.created_at).toLocaleString()}
                   </p>
                 </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>

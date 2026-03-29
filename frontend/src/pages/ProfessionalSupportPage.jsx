@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import TopBar from '../components/layout/TopBar';
 import { useAuth } from '../context/AuthContext';
+import { requestHelp, analyzeConversation, getMyRequests } from '../api/endpoints';
 import styles from './ProfessionalSupportPage.module.css';
 
 const CATEGORIES = [
@@ -16,76 +17,59 @@ const CATEGORIES = [
   { label: 'Other', icon: '💬' },
 ];
 
-const MOCK_RESPONSES = [
-  {
-    id: 'resp1',
-    initials: 'DA',
-    name: 'Dr. Aris',
-    role: 'Verified Therapist',
-    time: '2m ago',
-    message: "I understand how overwhelming this can feel. I'm available right now — happy to chat or jump straight into a session.",
-    sessionId: 's-aris',
-  },
-  {
-    id: 'resp2',
-    initials: 'MK',
-    name: 'Peer Helper',
-    role: 'Peer Supporter',
-    time: '5m ago',
-    message: "I've been through something similar. Happy to share what helped me or just listen — whatever feels right for you.",
-    sessionId: 's-mk',
-  },
-];
-
-function ResponseCard({ resp, onSession }) {
-  return (
-    <div className={styles.responseCard}>
-      <div className={styles.respHeader}>
-        <div className={styles.respAvatar}>{resp.initials}</div>
-        <div className={styles.respMeta}>
-          <span className={styles.respName}>{resp.name}</span>
-          <span className={styles.respRole}>{resp.role}</span>
-        </div>
-        <span className={styles.respTime}>{resp.time}</span>
-      </div>
-      <p className={styles.respMessage}>{resp.message}</p>
-      <button className={styles.sessionBtn} onClick={() => onSession(resp.sessionId)}>
-        ▶ Open Session
-      </button>
-    </div>
-  );
-}
+const STATUS_LABELS = {
+  pending: { label: 'Pending', color: '#f59e0b' },
+  active: { label: 'Active', color: '#22c55e' },
+  closed: { label: 'Closed', color: '#6b7280' },
+};
 
 function RequestItem({ req, onSession }) {
   const [expanded, setExpanded] = useState(true);
+  const prefs = req.preferences || {};
+  const statusInfo = STATUS_LABELS[req.status] || STATUS_LABELS.pending;
+
   return (
     <div className={styles.requestItem}>
       <div className={styles.requestItemHeader} onClick={() => setExpanded(p => !p)}>
         <div className={styles.requestItemLeft}>
-          <span className={[styles.typePill, req.helperType === 'therapist' ? styles.typePillTherapist : ''].join(' ')}>
-            {req.helperType === 'peer' ? '🤝 Peer' : '🩺 Therapist'}
+          <span className={[styles.typePill, prefs.helper_type === 'therapist' ? styles.typePillTherapist : ''].join(' ')}>
+            {prefs.helper_type === 'therapist' ? '🩺 Therapist' : '🤝 Peer'}
           </span>
           <div className={styles.requestItemMeta}>
-            <p className={styles.requestItemMessage}>"{req.message}"</p>
+            <p className={styles.requestItemMessage}>"{prefs.message || 'No message provided'}"</p>
             <div className={styles.requestItemCategories}>
-              {req.categories.map(c => <span key={c} className={styles.reqCatChip}>{c}</span>)}
+              {(prefs.categories || []).map(c => <span key={c} className={styles.reqCatChip}>{c}</span>)}
             </div>
           </div>
         </div>
         <div className={styles.requestItemRight}>
-          <span className={styles.requestItemTime}>{req.time}</span>
-          <span className={styles.responsesCount}>{req.responses.length} response{req.responses.length !== 1 ? 's' : ''}</span>
+          <span className={styles.requestItemTime}>{new Date(req.created_at).toLocaleString()}</span>
+          <span style={{ color: statusInfo.color, fontWeight: 600, fontSize: '0.75rem' }}>
+            ● {statusInfo.label}
+          </span>
+          {req.status === 'active' && (
+            <button
+              className={styles.sessionBtn || styles.sendBtn}
+              onClick={(e) => { e.stopPropagation(); onSession(req.session_id); }}
+            >
+              ▶ Open Session
+            </button>
+          )}
           <span className={styles.chevron}>{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
-
       {expanded && (
         <div className={styles.responseGrid}>
-          {req.responses.map(resp => (
-            <ResponseCard key={resp.id} resp={resp} onSession={onSession} />
-          ))}
-          {req.responses.length === 0 && (
-            <p className={styles.waitingText}>⏳ Waiting for helpers to respond...</p>
+          {req.status === 'pending' && (
+            <p className={styles.waitingText}>⏳ Waiting for a helper to accept your request...</p>
+          )}
+          {req.status === 'active' && (
+            <p style={{ padding: '12px', color: 'var(--color-text-muted)' }}>
+              ✅ A helper has accepted. Click "Open Session" to start chatting.
+            </p>
+          )}
+          {req.status === 'closed' && (
+            <p style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Session closed.</p>
           )}
         </div>
       )}
@@ -93,7 +77,7 @@ function RequestItem({ req, onSession }) {
   );
 }
 
-function ComposeForm({ onSend, isDrawer }) {
+function ComposeForm({ onSend, isDrawer, sending = false, error = null }) {
   const [helperType, setHelperType] = useState('peer');
   const [message, setMessage] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -104,7 +88,7 @@ function ComposeForm({ onSend, isDrawer }) {
     );
 
   const handleSend = () => {
-    if (!message.trim()) return;
+    if (!message.trim() || sending) return;
     onSend({ helperType, message, categories: selectedCategories });
   };
 
@@ -172,12 +156,13 @@ function ComposeForm({ onSend, isDrawer }) {
       </div>
 
       <button
-        className={[styles.sendBtn, !message.trim() ? styles.sendBtnDisabled : ''].join(' ')}
+        className={[styles.sendBtn, (!message.trim() || sending) ? styles.sendBtnDisabled : ''].join(' ')}
         onClick={handleSend}
-        disabled={!message.trim()}
+        disabled={!message.trim() || sending}
       >
-        Send to Helpers ▶
+        {sending ? 'Sending...' : 'Send to Helpers ▶'}
       </button>
+      {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '8px' }}>{error}</p>}
       <div className={styles.responseTime}>⚡ AVERAGE RESPONSE TIME: UNDER 10 MINUTES</div>
     </div>
   );
@@ -188,19 +173,36 @@ export default function ProfessionalSupportPage() {
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
 
-  const isFirstTime = requests.length === 0;
+  useEffect(() => {
+    getMyRequests()
+      .then(data => setRequests(Array.isArray(data) ? data : []))
+      .catch(err => console.error('Failed to load requests:', err))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleSend = ({ helperType, message, categories }) => {
-    setRequests(prev => [{
-      id: `req-${Date.now()}`,
-      helperType,
-      message,
-      categories,
-      time: 'just now',
-      responses: MOCK_RESPONSES,
-    }, ...prev]);
-    setDrawerOpen(false);
+  const isFirstTime = !loading && requests.length === 0;
+
+  const handleSend = async ({ helperType, message, categories }) => {
+    setSending(true);
+    setError(null);
+    try {
+      // Analyze message to get domain
+      const { domain } = await analyzeConversation(message);
+      const preferences = { helper_type: helperType, categories, message };
+      await requestHelp(domain, user.userId, preferences);
+      // Refresh requests list
+      const data = await getMyRequests();
+      setRequests(Array.isArray(data) ? data : []);
+      setDrawerOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send request. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleSession = (sessionId) => navigate(`/session/${sessionId}`);
@@ -214,7 +216,7 @@ export default function ProfessionalSupportPage() {
         {isFirstTime ? (
           /* ── First time: show form inline ── */
           <div className={styles.firstTimeLayout}>
-            <ComposeForm onSend={handleSend} isDrawer={false} />
+            <ComposeForm onSend={handleSend} isDrawer={false} sending={sending} error={error} />
             <div className={styles.trustSidebar}>
               <p className={styles.previewLabel}>WHY IT'S SAFE</p>
               <div className={styles.trustCard}>
@@ -245,9 +247,13 @@ export default function ProfessionalSupportPage() {
             </div>
 
             <div className={styles.requestList}>
-              {requests.map(req => (
-                <RequestItem key={req.id} req={req} onSession={handleSession} />
-              ))}
+              {loading ? (
+                <p style={{ color: 'var(--color-text-muted)', padding: '16px' }}>Loading...</p>
+              ) : (
+                requests.map(req => (
+                  <RequestItem key={req.session_id} req={req} onSession={handleSession} />
+                ))
+              )}
             </div>
           </>
         )}
@@ -266,7 +272,7 @@ export default function ProfessionalSupportPage() {
               <button className={styles.drawerClose} onClick={() => setDrawerOpen(false)}>✕</button>
             </div>
             <div className={styles.drawerBody}>
-              <ComposeForm onSend={handleSend} isDrawer />
+              <ComposeForm onSend={handleSend} isDrawer sending={sending} error={error} />
             </div>
           </div>
         </>

@@ -92,6 +92,7 @@ class HelpSession(Base):
     user_id=Column(Integer, ForeignKey("users.user_id"))
     helper_id=Column(Integer, ForeignKey("helpers.helper_id"), nullable=True)
     status = Column(Enum(SessionStatus), default=SessionStatus.PENDING) ## This one to track whether the particuaar one to one session is closed or not , if the status is  closed then other user can be assigned and if the status is active then another user is in queue, while querying check the status too with the domain expertise
+    preferences = Column(JSON, nullable=True)  # Stores helper_type, categories, message from user
     created_at=Column(DateTime, nullable=False, default=datetime.now())
     
     user=relationship("User",back_populates="help_sessions")

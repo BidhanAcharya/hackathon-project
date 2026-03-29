@@ -39,8 +39,9 @@ class QueryRequestSchema(BaseModel):
 #     limit: int = None
 
 class HelpRequestSchema(BaseModel):
-    user_id:int
+    user_id: int
     domain: DomainExpertise
+    preferences: Optional[dict] = None  # { helper_type, categories, message }
     
     
 class AnalyzeRequest(BaseModel):

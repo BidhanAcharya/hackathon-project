@@ -116,7 +116,7 @@ export default function OnboardingPage() {
 
       {/* Fixed Header */}
       <header className={styles.header}>
-        <span className={styles.logo}>Mental Wizard</span>
+        <span className={styles.logo}>Gunaso</span>
         <button className={styles.closeBtn} onClick={() => navigate('/')}>✕</button>
       </header>
 

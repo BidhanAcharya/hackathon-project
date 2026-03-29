@@ -97,7 +97,7 @@ export default function EmergencyPage() {
       <header className={styles.navbar}>
         <button className={styles.logo} onClick={() => navigate('/')}>
           <span className={styles.logoIcon}>+</span>
-          <span className={styles.logoName}>Mental Wizard</span>
+          <span className={styles.logoName}>Gunaso</span>
         </button>
         <div className={styles.navTitle}>
           <h1>Crisis Helplines</h1>

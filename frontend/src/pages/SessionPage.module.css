@@ -51,8 +51,8 @@
 .helperRow { flex-direction: row; }
 .userRow { flex-direction: row-reverse; }
 
-.helperAvatar { width: 32px; height: 32px; border-radius: 50%; background: var(--color-helper-purple-light); flex-shrink: 0; }
-.userAvatar { width: 28px; height: 28px; border-radius: 50%; background: var(--color-primary-light); flex-shrink: 0; }
+.helperAvatar { width: 32px; height: 32px; border-radius: 50%; background: var(--color-helper-purple-light); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--color-primary); }
+.userAvatar { width: 28px; height: 28px; border-radius: 50%; background: var(--color-primary-light); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--color-primary); }
 
 .bubble { max-width: 400px; padding: 13px 15px; border-radius: var(--radius-lg); font-size: 14px; line-height: 1.6; }
 .bubble p { margin: 0; }
@@ -95,4 +95,9 @@
 .input:focus { border-color: var(--color-primary); }
 .sendBtn { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
 .sendBtn:hover { background: var(--color-primary-hover); }
+.sendBtnDisabled { opacity: 0.4; cursor: not-allowed; }
 .disclaimer { text-align: center; font-size: 11px; color: var(--color-text-muted); padding: 8px 20px 12px; background: var(--color-surface); }
+
+.seekerDot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+
+.emptyState { text-align: center; padding: 32px 20px; color: var(--color-text-muted); font-size: 14px; }

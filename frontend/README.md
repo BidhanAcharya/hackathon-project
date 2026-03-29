@@ -1,4 +1,4 @@
-# Mental Wizard - Frontend
+# Gunaso - Frontend
 
 A mental health support platform that connects anonymous seekers with verified helpers and AI-assisted tools. Built for a hackathon.
 
@@ -6,14 +6,14 @@ A mental health support platform that connects anonymous seekers with verified h
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 18 |
-| Build tool | Vite 4 |
-| Routing | React Router DOM v7 |
-| State | React Context API |
-| Styling | CSS Modules + CSS custom properties |
-| Font | Manrope (Google Fonts) |
+| Layer      | Technology                          |
+| ---------- | ----------------------------------- |
+| Framework  | React 18                            |
+| Build tool | Vite 4                              |
+| Routing    | React Router DOM v7                 |
+| State      | React Context API                   |
+| Styling    | CSS Modules + CSS custom properties |
+| Font       | Manrope (Google Fonts)              |
 
 ---
 
@@ -25,12 +25,12 @@ npm install
 npm run dev
 ```
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start dev server at `http://localhost:5173` |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint |
+| Script            | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `npm run dev`     | Start dev server at `http://localhost:5173` |
+| `npm run build`   | Production build to `dist/`                 |
+| `npm run preview` | Preview production build locally            |
+| `npm run lint`    | Run ESLint                                  |
 
 ---
 
@@ -83,31 +83,34 @@ src/
 ## Routes
 
 ### Public
-| Path | Page |
-|---|---|
-| `/` | Landing page |
-| `/signup` | Seeker sign up |
-| `/login` | Seeker log in |
-| `/onboarding` | Onboarding questionnaire (new seekers only) |
-| `/onboarding/results` | Onboarding results |
-| `/helper/signup` | Helper sign up |
-| `/helper/login` | Helper log in |
+
+| Path                  | Page                                        |
+| --------------------- | ------------------------------------------- |
+| `/`                   | Landing page                                |
+| `/signup`             | Seeker sign up                              |
+| `/login`              | Seeker log in                               |
+| `/onboarding`         | Onboarding questionnaire (new seekers only) |
+| `/onboarding/results` | Onboarding results                          |
+| `/helper/signup`      | Helper sign up                              |
+| `/helper/login`       | Helper log in                               |
 
 ### Seeker (protected — requires `role: seeker`)
-| Path | Page |
-|---|---|
-| `/dashboard` | Seeker dashboard |
-| `/chat` | AI chat |
+
+| Path                    | Page                    |
+| ----------------------- | ----------------------- |
+| `/dashboard`            | Seeker dashboard        |
+| `/chat`                 | AI chat                 |
 | `/professional-support` | Browse verified helpers |
-| `/session/:sessionId` | Live session |
+| `/session/:sessionId`   | Live session            |
 
 ### Helper (protected — requires `role: helper`)
-| Path | Page |
-|---|---|
-| `/helper/dashboard` | Clinical overview + incoming requests |
-| `/helper/history` | Past sessions + feedback |
-| `/helper/request/:requestId` | Request brief detail |
-| `/helper/session/:sessionId` | Live helper session |
+
+| Path                         | Page                                  |
+| ---------------------------- | ------------------------------------- |
+| `/helper/dashboard`          | Clinical overview + incoming requests |
+| `/helper/history`            | Past sessions + feedback              |
+| `/helper/request/:requestId` | Request brief detail                  |
+| `/helper/session/:sessionId` | Live helper session                   |
 
 ---
 
@@ -135,14 +138,13 @@ All design tokens are defined once in `src/index.css` as CSS custom properties a
 
 **Key colour roles**
 
-| Variable | Value | Used for |
-|---|---|---|
-| `--color-primary` | `#3c676e` | Brand, buttons, active nav — shared across the whole app |
-| `--color-helper-blue` | `→ var(--color-primary)` | Helper portal accents (references primary, stays in sync) |
-| `--color-seeker-green` | `#0F6E56` | Seeker-specific highlights |
-| `--color-alert-red` | `#CC3B1A` | Errors, emergency button |
-| `--color-background` | `#F5F5F3` | Page background |
-| `--color-surface` | `#FFFFFF` | Cards, sidebar |
+| Variable               | Value                    | Used for                                                  |
+| ---------------------- | ------------------------ | --------------------------------------------------------- |
+| `--color-primary`      | `#3c676e`                | Brand, buttons, active nav — shared across the whole app  |
+| `--color-helper-blue`  | `→ var(--color-primary)` | Helper portal accents (references primary, stays in sync) |
+| `--color-seeker-green` | `#0F6E56`                | Seeker-specific highlights                                |
+| `--color-alert-red`    | `#CC3B1A`                | Errors, emergency button                                  |
+| `--color-background`   | `#F5F5F3`                | Page background                                           |
+| `--color-surface`      | `#FFFFFF`                | Cards, sidebar                                            |
 
 To change the brand colour, update `--color-primary` in `index.css` — the entire app updates.
-

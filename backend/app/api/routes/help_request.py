@@ -92,7 +92,8 @@ def request_help(data:HelpRequestSchema, db: Session = Depends(get_db), current_
         session_id=str(uuid.uuid4()),
         user_id=current_user.user_id,
         helper_id=helper.helper_id,
-        status=SessionStatus.PENDING
+        status=SessionStatus.PENDING,
+        preferences=data.preferences
     )
     db.add(session)
     db.commit()
@@ -134,6 +135,7 @@ def get_session_detail(session_id: str, db: Session = Depends(get_db)):
         "helper_id": session.helper_id,
         "status": session.status,
         "created_at": session.created_at,
+        "preferences": session.preferences,
         "initial_assessment": user.initial_assesment if user else None,
     }
 
@@ -145,7 +147,17 @@ def get_active_sessions(helper_id: int, db: Session = Depends(get_db)):
         HelpSession.helper_id == helper_id,
         HelpSession.status == SessionStatus.ACTIVE
     ).all()
-    return sessions
+    return [
+        {
+            "session_id": s.session_id,
+            "user_id": s.user_id,
+            "helper_id": s.helper_id,
+            "status": s.status,
+            "created_at": s.created_at,
+            "preferences": s.preferences,
+        }
+        for s in sessions
+    ]
 
 
 ## Helper sees all pending requests assigned to them
@@ -155,7 +167,36 @@ def get_pending_requests(helper_id:int, db:Session=Depends(get_db)):
         HelpSession.helper_id==helper_id,
         HelpSession.status==SessionStatus.PENDING
     ).all()
-    return sessions
+    return [
+        {
+            "session_id": s.session_id,
+            "user_id": s.user_id,
+            "helper_id": s.helper_id,
+            "status": s.status,
+            "created_at": s.created_at,
+            "preferences": s.preferences,
+        }
+        for s in sessions
+    ]
+
+
+## User sees all their own help requests
+@router.get("/my-requests")
+def get_my_requests(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    sessions = db.query(HelpSession).filter(
+        HelpSession.user_id == current_user.user_id
+    ).order_by(HelpSession.created_at.desc()).all()
+    return [
+        {
+            "session_id": s.session_id,
+            "user_id": s.user_id,
+            "helper_id": s.helper_id,
+            "status": s.status.value,
+            "created_at": s.created_at,
+            "preferences": s.preferences,
+        }
+        for s in sessions
+    ]
 
 
 
